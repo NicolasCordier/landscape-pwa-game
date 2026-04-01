@@ -4,33 +4,33 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), VitePWA({
-    registerType: 'prompt',
-    injectRegister: false,
+    plugins: [react(), VitePWA({
+        registerType: 'prompt',
+        injectRegister: false,
 
-    pwaAssets: {
-      disabled: false,
-      config: true,
-    },
+        pwaAssets: {
+            disabled: false,
+            config: true,
+        },
 
-    manifest: {
-      name: 'Landscape',
-      short_name: 'Landscape',
-      description: 'Solo tile-placement game inspired by Harmonies',
-      theme_color: '#7a9e6e',
-    },
+        manifest: {
+            name: 'Landscape',
+            short_name: 'Landscape',
+            description: 'Solo tile-placement game inspired by Harmonies',
+            theme_color: '#7a9e6e',
+        },
 
-    workbox: {
-      globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
-      cleanupOutdatedCaches: true,
-      clientsClaim: true,
-    },
+        workbox: {
+            globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+            cleanupOutdatedCaches: true,
+            clientsClaim: true,
+        },
 
-    devOptions: {
-      enabled: false,
-      navigateFallback: 'index.html',
-      suppressWarnings: true,
-      type: 'module',
-    },
-  })],
+        devOptions: {
+            enabled: false,
+            navigateFallback: 'index.html',
+            suppressWarnings: true,
+            type: 'module',
+        },
+    })],
 })
