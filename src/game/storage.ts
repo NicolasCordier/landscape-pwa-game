@@ -1,7 +1,7 @@
 import type { Token } from './cell';
 import type { BoardGrid } from './cell';
 import { generateBoardType } from './board';
-import { AnimalCard, SpiritCard, ALL_CARDS, ALL_SPIRIT_CARDS } from './cards';
+import { AnimalCard, SpiritCard, ALL_ANIMAL_CARDS, ALL_SPIRIT_CARDS } from './cards';
 import type { BaseCard, Pattern } from './cards';
 
 // ─── Serializable snapshot types ─────────────────────────────────────────────
@@ -102,7 +102,7 @@ export function serializeCard(card: BaseCard<Pattern>): SerializedCard {
 // Looks up a card template from the registry and clones it with the saved cubeIndex
 function deserializeCard(saved: SerializedCard): BaseCard<Pattern> | null {
     const template =
-        ALL_CARDS.find(c => c.id === saved.cardId) ??
+        ALL_ANIMAL_CARDS.find(c => c.id === saved.cardId) ??
         ALL_SPIRIT_CARDS.find(c => c.id === saved.cardId) ??
         null;
 

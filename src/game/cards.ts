@@ -1,4 +1,5 @@
 import type { Cell } from './cell';
+import { simpleTerrainScoring } from './scoring';
 import type { Terrain } from './terrain';
 import { computeZones } from './zones';
 
@@ -40,7 +41,7 @@ export abstract class BaseCard<P extends Pattern = Pattern> {
         this.centerTerrain = centerTerrain;
         this.pattern = pattern;
         this.cubeAt = cubeAt;
-        this.points = points;
+        this.points = points.sort((a, b) => b - a); // sort descending
         this.cubeIndex = points.length;
     }
 
@@ -140,27 +141,43 @@ export class SpiritCard extends BaseCard<Pattern> {
 
 // ─── Card registry ────────────────────────────────────────────────────────────
 
-// TODO: fill in all 32 animal cards with their exact data from the physical game.
-// Pattern indices 0-5 are clockwise neighbors starting top-right.
-// points[] is descending: [max_score, ..., min_score], length = number of cube slots.
-// Patterns are cast to Pattern to fix generic invariance when storing in typed arrays.
-export const ALL_CARDS: AnimalCard<Pattern>[] = [
-    // Example: deer — FIELD center, TREE_2 at neighbor 1, FIELD at neighbor 3; cube at center
-    new AnimalCard('deer',  'FIELD',  [null, 'TREE_2', null, 'FIELD', null, null] as Pattern, 'center', [9, 4]),
-    // Example: bear — TREE_3 center; cube at center
-    new AnimalCard('bear',  'TREE_3', [null, null, null, null, null, null] as Pattern,         'center', [15, 9, 4]),
-    // Example: eagle — MTN_2 center; cube at center
-    new AnimalCard('eagle', 'MTN_2',  [null, null, null, null, null, null] as Pattern,         'center', [9, 4]),
+export const ALL_ANIMAL_CARDS = [
+    new AnimalCard('crocodile',     'RIVER',    ['RIVER',  null,     null,    'TREE_3',   null,    null], '0',      [15, 9, 4]),
+    new AnimalCard('ray',           'RIVER',    ['MTN_1',  null,     null,    'MTN_1',    null,    null], 'center', [16, 10, 4]),
+    new AnimalCard('fish',          'RIVER',    ['MTN_3',  null,     null,     null,      null,    null], 'center', [16, 10, 6, 3]),
+    new AnimalCard('otter',         'TREE_1',   ['RIVER',  null,     null,     'TREE_1',  null,    null], '0',      [16, 10, 5]),
+    new AnimalCard('frog',          'RIVER',    ['TREE_1', null,     null,     null,      null,    null], 'center', [2, 4, 6, 10, 15]),
+    new AnimalCard('duck',          'RIVER',    ['CITY',   null,     null,     null,      null,    null], 'center', [2, 4, 8, 13]),
+    new AnimalCard('flamingo',      'RIVER',    ['FIELD',  'FIELD',  null,     null,      null,    null], 'center', [4, 10, 16]),
+    new AnimalCard('gecko',         'FIELD',    ['CITY',   null,     null,     'FIELD',   null,    null], '0',      [5, 10, 16]),
+    new AnimalCard('mouse',         'CITY',     ['FIELD',  null,     'FIELD',  null,      null,    null], 'center', [5, 10, 17]),
+    new AnimalCard('peacock',       'CITY',     ['RIVER',  null,     'RIVER',  null,      null,    null], 'center', [5, 10, 17]),
+    new AnimalCard('squirrel',      'CITY',     ['TREE_3', null,     null,     null,      null,    null], 'center', [4, 9, 15]),
+    new AnimalCard('hedgehog',      'CITY',     ['TREE_2', 'TREE_2', null,     null,      null,    null], 'center', [5, 12]),
+    new AnimalCard('bee',           'TREE_2',   ['FIELD',  'FIELD',  'FIELD',  null,      null,    null], 'center', [8, 18]),
+    new AnimalCard('bear',          'TREE_1',   ['MTN_1',  'MTN_1',  null,     null,      null,    null], 'center', [5, 11]),
+    new AnimalCard('rabbit',        'TREE_1',   ['TREE_1', null,     null,     'CITY',    null,    null], '0',      [5, 10, 17]),
+    new AnimalCard('parrot',        'TREE_2',   ['RIVER',  'RIVER',  null,     null,      null,    null], 'center', [4, 9, 14]),
+    new AnimalCard('boar',          'TREE_2',   ['CITY',   null,     null,     null,      null,    null], 'center', [4, 8, 13]),
+    new AnimalCard('koala',         'TREE_2',   ['TREE_1', null,     null,     null,      null,    null], 'center', [3, 6, 10, 15]),
+    new AnimalCard('wolf',          'TREE_3',   ['FIELD',  null,     null,     'FIELD',   null,    null], 'center', [4, 10, 16]),
+    new AnimalCard('kingfisher',    'TREE_3',   ['RIVER',  null,     'RIVER',  null,      null,    null], 'center', [5, 11, 18]),
+    new AnimalCard('penguin',       'MTN_1',    ['RIVER',  null,     'RIVER',  null,      null,    null], 'center', [4, 10, 16]),
+    new AnimalCard('bat',           'MTN_1',    ['TREE_3', null,     null,     null,      null,    null], 'center', [3, 6, 10, 15]),
+    new AnimalCard('fennec',        'MTN_1',    ['MTN_1',  null,     null,     'FIELD',   null,    null], '0',      [4, 9, 16]),
+    new AnimalCard('macaque',       'MTN_2',    ['RIVER',  'RIVER',  null,     null,      null,    null], 'center', [5, 11]),
+    new AnimalCard('condor',        'MTN_3',    ['FIELD',  null,     null,     null,      null,    null], 'center', [5, 11]),
+    new AnimalCard('meerkat',       'MTN_1',    ['FIELD',  null,     null,     null,      null,    null], 'center', [2, 5, 9, 14]),
+    new AnimalCard('raven',         'FIELD',    ['CITY',   null,     'CITY',   null,      null,    null], 'center', [4, 9]),
+    new AnimalCard('llama',         'FIELD',    ['FIELD',  null,     null,     'MTN_2',   null,    null], '0',      [5, 12]),
+    new AnimalCard('arctic_fox',    'FIELD',    ['TREE_2', null,     'TREE_2', null,      null,    null], 'center', [5, 10, 17]),
+    new AnimalCard('raccoon',       'FIELD',    ['RIVER',  'RIVER',  'RIVER',  null,      null,    null], 'center', [6, 12]),
+    new AnimalCard('ladybug',       'FIELD',    ['TREE_1', null,     null,     null,      null,    null], 'center', [2, 5, 8, 12, 17]),
+    new AnimalCard('black_panther', 'TREE_2',   ['FIELD',  null,     null,     'TREE_2',  null,    null], '0',      [5, 11]),
 ];
 
-// TODO: fill in all 10 spirit cards with their exact data and scoreBonus functions.
-export const ALL_SPIRIT_CARDS: SpiritCard[] = [
-    // Example spirit: 2pts per small yellow group (1-2), 10pts per large group (3+)
-    new SpiritCard(
-        'spirit_meadow',
-        'FIELD',
-        [null, null, null, null, null, null] as Pattern,
-        'center',
+export const ALL_SPIRIT_CARDS = [
+    new SpiritCard('lion', 'FIELD', ['FIELD', null, null, 'TREE_2', null, null], 'center',
         (cells) => {
             const zones = computeZones(cells, c => c.detectTerrain() === 'FIELD');
             return zones.reduce((sum, z) => {
@@ -170,5 +187,44 @@ export const ALL_SPIRIT_CARDS: SpiritCard[] = [
                 return sum + 10;
             }, 0);
         }
+    ),
+    new SpiritCard('butterfly', 'RIVER', ['FIELD', 'RIVER', 'FIELD', null, null, null], '0',
+        (cells) => {
+            const zones = computeZones(cells, c => c.detectTerrain() === 'FIELD');
+            return zones.length * 5;
+        }
+    ),
+    new SpiritCard('deer', 'TREE_2', ['TREE_1', null, null, 'TREE_3', null, null], 'center',
+        simpleTerrainScoring({ TREE_2: 4, TREE_3: 4 })
+    ),
+    new SpiritCard('owl', 'TREE_3', ['TREE_1', 'TREE_1', null, null, null, null], 'center',
+        simpleTerrainScoring({ TREE_1: 3, TREE_2: 3, TREE_3: 1 })
+    ),
+    new SpiritCard('night_cat', 'TREE_1', ['CITY', null, null, 'CITY', null, null], '0',
+        (cells) => {
+            const zones = computeZones(cells, c => c.detectTerrain() === 'CITY');
+            return zones.length * 4;
+        }
+    ),
+    new SpiritCard('phoenix', 'CITY', ['CITY', null, null, 'FIELD', null, null], '0',
+        (cells) => {
+            const zones = computeZones(cells, c => c.detectTerrain() === 'CITY').filter((zones) => zones.length >= 2);
+            return zones.length * 6;
+        }
+    ),
+    new SpiritCard('ram', 'MTN_3', ['MTN_2', null, null, null, null, null], 'center',
+        simpleTerrainScoring({ MTN_2: 4, MTN_3: 4 })
+    ),
+    new SpiritCard('marmot', 'MTN_2', ['MTN_1', null, 'MTN_1', null, null, null], 'center',
+        simpleTerrainScoring({ MTN_1: 3, MTN_2: 3, TREE_3: 1 })
+    ),
+    new SpiritCard('dragonfly', 'RIVER', ['TREE_2', null, null, 'TREE_2', null, null], 'center',
+        (cells) => {
+            const zones = computeZones(cells, c => c.detectTerrain() === 'RIVER').filter((zones) => zones.length >= 2);
+            return zones.length * 7;
+        }
+    ),
+    new SpiritCard('turtle', 'RIVER', ['RIVER', null, null, 'MTN_2', null, null], 'center',
+        simpleTerrainScoring({ RIVER: 2 })
     ),
 ];
