@@ -2,7 +2,7 @@ import type { Token } from './cell';
 import type { BoardGrid } from './cell';
 import { generateBoardType } from './board';
 import { AnimalCard, SpiritCard, ALL_ANIMAL_CARDS, ALL_SPIRIT_CARDS } from './cards';
-import type { BaseCard, Pattern } from './cards';
+import type { BaseCard } from './cards';
 
 // ─── Serializable snapshot types ─────────────────────────────────────────────
 
@@ -95,12 +95,12 @@ function restoreBoard(grid: BoardGrid, saved: SerializedCell[]): void {
 
 // ─── Card serialization ───────────────────────────────────────────────────────
 
-export function serializeCard(card: BaseCard<Pattern>): SerializedCard {
+export function serializeCard(card: BaseCard): SerializedCard {
     return { cardId: card.id, cubeIndex: card.cubeIndex };
 }
 
 // Looks up a card template from the registry and clones it with the saved cubeIndex
-function deserializeCard(saved: SerializedCard): BaseCard<Pattern> | null {
+function deserializeCard(saved: SerializedCard): BaseCard | null {
     const template =
         ALL_ANIMAL_CARDS.find(c => c.id === saved.cardId) ??
         ALL_SPIRIT_CARDS.find(c => c.id === saved.cardId) ??
@@ -164,7 +164,7 @@ export function applyTurnSnapshot(game: SavedGame, snapshot: TurnSnapshot): Save
 
 export interface DeserializedGame {
     grid: BoardGrid;
-    hand: BaseCard<Pattern>[];
+    hand: BaseCard[];
     spiritCard: SpiritCard | null;
     centralBoard: Token[][];
     tokenBag: Token[];
@@ -178,7 +178,7 @@ export function deserializeGame(saved: SavedGame): DeserializedGame {
 
     const hand = saved.hand
         .map(deserializeCard)
-        .filter((c): c is BaseCard<Pattern> => c !== null);
+        .filter((c): c is BaseCard => c !== null);
 
     const spiritCardRaw = saved.spiritCard ? deserializeCard(saved.spiritCard) : null;
     const spiritCard = spiritCardRaw instanceof SpiritCard ? spiritCardRaw : null;

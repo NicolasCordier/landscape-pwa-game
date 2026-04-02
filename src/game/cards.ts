@@ -9,32 +9,28 @@ export type PatternEntry = Terrain | null;
 
 // Fixed 6-element tuple matching the 6 neighbor slots (index 0-5 clockwise)
 export type Pattern = [
-    PatternEntry, PatternEntry, PatternEntry,
+    Terrain, PatternEntry, PatternEntry,
     PatternEntry, PatternEntry, PatternEntry
 ];
 
-// Extracts numeric indices of non-null pattern entries for compile-time cubeAt validation
-type NonNullIndex<P extends Pattern> = {
-    [K in keyof P & `${number}`]: P[K] extends null ? never : K
-}[keyof P & `${number}`];
-
-export type CubeAt<P extends Pattern> = 'center' | NonNullIndex<P>;
+// Index 0 is always non-null (Terrain), so cubeAt is either center or neighbor[0]
+export type CubeAt = 'center' | '0';
 
 // ─── Abstract base ────────────────────────────────────────────────────────────
 
-export abstract class BaseCard<P extends Pattern = Pattern> {
+export abstract class BaseCard {
     readonly id: string;
     readonly centerTerrain: Terrain;
-    readonly pattern: P;
-    readonly cubeAt: CubeAt<P>;
+    readonly pattern: Pattern;
+    readonly cubeAt: CubeAt;
     readonly points: number[]; // descending, e.g. [15, 9, 4]
     cubeIndex: number;
 
     constructor(
         id: string,
         centerTerrain: Terrain,
-        pattern: P,
-        cubeAt: CubeAt<P>,
+        pattern: Pattern,
+        cubeAt: CubeAt,
         points: number[]
     ) {
         this.id = id;
@@ -90,9 +86,10 @@ export abstract class BaseCard<P extends Pattern = Pattern> {
             if (!ok) {
                 continue;
             }
-            const cubeCell = this.cubeAt === 'center'
+            // cubeAt is always 'center' or '0', so neighbor index = rot (since (0+rot)%6 = rot)
+        const cubeCell = this.cubeAt === 'center'
                 ? center
-                : center.neighbors[(+this.cubeAt + rot) % 6];
+                : center.neighbors[rot];
             if (cubeCell && !cubeCell.hasCube) {
                 return { rotation: rot, cubeCell };
             }
@@ -109,7 +106,7 @@ export abstract class BaseCard<P extends Pattern = Pattern> {
 
 // ─── Animal card ──────────────────────────────────────────────────────────────
 
-export class AnimalCard<P extends Pattern = Pattern> extends BaseCard<P> {
+export class AnimalCard extends BaseCard {
     getScore(): number {
         // cubeIndex = points.length → no cube placed → points[length] = undefined → 0
         // cubeIndex = 0 → all cubes placed → points[0] = max score
@@ -119,14 +116,14 @@ export class AnimalCard<P extends Pattern = Pattern> extends BaseCard<P> {
 
 // ─── Spirit of Nature card ────────────────────────────────────────────────────
 
-export class SpiritCard extends BaseCard<Pattern> {
+export class SpiritCard extends BaseCard {
     readonly scoreBonus: (cells: Cell[]) => number;
 
     constructor(
         id: string,
         centerTerrain: Terrain,
         pattern: Pattern,
-        cubeAt: CubeAt<Pattern>,
+        cubeAt: CubeAt,
         // End-of-game bonus scoring function (not serializable — looked up by id on load)
         scoreBonus: (cells: Cell[]) => number
     ) {
