@@ -2,14 +2,22 @@ import type { Cell } from './cell';
 import type { Terrain } from './terrain';
 import { computeZones } from './zones';
 
+export function simpleTerrainScoring(terrainScoring: Partial<Record<Terrain, number>>) {
+    return ((cells: Cell[]) => {
+        return cells.reduce((sum, cell) => {
+            const terrain = cell.detectTerrain();
+            if (terrain && terrainScoring[terrain]) {
+                sum += terrainScoring[terrain];
+            }
+            return sum;
+        }, 0)
+    });
+}
+
 // ─── Trees ────────────────────────────────────────────────────────────────────
 
 export function scoreTrees(cells: Cell[]): number {
-    const pts: Partial<Record<Terrain, number>> = { TREE_1: 1, TREE_2: 3, TREE_3: 7 };
-    return cells.reduce((sum, cell) => {
-        const terrain = cell.detectTerrain();
-        return sum + (terrain !== null ? (pts[terrain] ?? 0) : 0);
-    }, 0);
+    return simpleTerrainScoring({ TREE_1: 1, TREE_2: 3, TREE_3: 7 })(cells);
 }
 
 // ─── Mountains ────────────────────────────────────────────────────────────────
