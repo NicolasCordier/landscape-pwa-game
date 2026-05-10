@@ -1,17 +1,6 @@
 import type { BaseCard } from '../../game/cards';
-import type { Terrain } from '../../game/terrain';
-
-const TERRAIN_COLOR: Record<Terrain, string> = {
-    TREE_1: '#4a7c59',
-    TREE_2: '#4a7c59',
-    TREE_3: '#4a7c59',
-    MTN_1:  '#8a8c8f',
-    MTN_2:  '#8a8c8f',
-    MTN_3:  '#8a8c8f',
-    FIELD:  '#c9a227',
-    CITY:   '#b94040',
-    RIVER:  '#2e7bbf',
-};
+import { TERRAIN_COLOR } from './colors';
+import { PatternPreview } from './PatternPreview';
 
 function formatName(id: string): string {
     return id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -46,18 +35,19 @@ export function Card({ card, selected, onClick }: CardProps) {
                 userSelect:   'none',
             }}
         >
-            {/* Name */}
+            {/* Name (top) + pattern preview (bottom) */}
             <div style={{
                 flex:           1,
                 display:        'flex',
+                flexDirection:  'column',
                 alignItems:     'center',
-                justifyContent: 'center',
-                padding:        '4px 6px',
+                justifyContent: 'space-between',
+                padding:        '6px 4px 4px',
                 overflow:       'hidden',
                 borderRadius:   '8px 0 0 8px',
             }}>
                 <span style={{
-                    fontSize:   11,
+                    fontSize:   9,
                     fontWeight: 600,
                     textAlign:  'center',
                     lineHeight: 1.2,
@@ -65,6 +55,11 @@ export function Card({ card, selected, onClick }: CardProps) {
                 }}>
                     {formatName(card.id)}
                 </span>
+                <PatternPreview
+                    centerTerrain={card.centerTerrain}
+                    pattern={card.pattern}
+                    cubeAt={card.cubeAt}
+                />
             </div>
 
             {/* Color bar — right corners rounded to match card */}
