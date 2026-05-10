@@ -1,37 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import appLogo from '/favicon.svg'
-import PWABadge from './PWABadge.tsx'
-import './App.css'
+import { useMemo, useState } from 'react';
+import PWABadge from './PWABadge.tsx';
+import { HexBoard } from './components/HexBoard/HexBoard.tsx';
+import { generateBoardType } from './game/board.ts';
+import type { Cell } from './game/cell.ts';
 
 function App() {
-    const [count, setCount] = useState(0)
+    const grid = useMemo(() => {
+        const g = generateBoardType('A');
+        // Seed a few cells with tokens for visual testing
+        g[2][2].stack.push('BROWN', 'GREEN');
+        g[2][1].stack.push('GRAY', 'GRAY');
+        g[1][1].stack.push('YELLOW');
+        g[3][2].stack.push('BLUE');
+        g[0][0].stack.push('BROWN', 'RED');
+        g[4][3].stack.push('GRAY', 'GRAY', 'GRAY');
+        g[2][2].hasCube = true;
+        g[3][2].hasCube = true;
+        g[4][3].hasCube = true;
+        return g;
+    }, []);
+
+    const [highlighted, setHighlighted] = useState<ReadonlySet<string>>(new Set());
+
+    function handleCellClick(cell: Cell) {
+        setHighlighted(prev => {
+            const next = new Set(prev);
+            if (next.has(cell.id)) {
+                next.delete(cell.id);
+            } else {
+                next.add(cell.id);
+            }
+            return next;
+        });
+    }
 
     return (
-        <>
-            <div>
-                <a href="https://vite.dev" target="_blank">
-                    <img src={appLogo} className="logo" alt="Landscape logo" />
-                </a>
-                <a href="https://react.dev" target="_blank">
-                    <img src={reactLogo} className="logo react" alt="React logo" />
-                </a>
-            </div>
-            <h1>Landscape</h1>
-            <div className="card">
-                <button onClick={() => setCount((count) => count + 1)}>
-                    count is {count}
-                </button>
-                <p>
-                    Edit <code>src/App.tsx</code> and save to test HMR
-                </p>
-            </div>
-            <p className="read-the-docs">
-                Click on the Vite and React logos to learn more
-            </p>
+        <div style={{ maxWidth: 700, margin: '0 auto', padding: 16 }}>
+            <h1 style={{ textAlign: 'center', marginBottom: 16 }}>Landscape</h1>
+            <HexBoard
+                grid={grid}
+                onCellClick={handleCellClick}
+                highlightedCells={highlighted}
+            />
             <PWABadge />
-        </>
-    )
+        </div>
+    );
 }
 
-export default App
+export default App;
