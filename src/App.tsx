@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react';
 import PWABadge from './PWABadge.tsx';
 import { HexBoard } from './components/HexBoard/HexBoard.tsx';
+import { SelectableCards } from './components/Cards/SelectableCards.tsx';
+import { PlayerHand } from './components/Cards/PlayerHand.tsx';
 import { generateBoardType } from './game/board.ts';
+import { ALL_ANIMAL_CARDS } from './game/cards.ts';
+import type { BaseCard } from './game/cards.ts';
 import type { Cell } from './game/cell.ts';
 
 function App() {
@@ -20,28 +24,51 @@ function App() {
         return g;
     }, []);
 
-    const [highlighted, setHighlighted] = useState<ReadonlySet<string>>(new Set());
+    const selectableCards = useMemo(() => ALL_ANIMAL_CARDS.slice(0, 3), []);
+    const handCards       = useMemo(() => ALL_ANIMAL_CARDS.slice(3, 7), []);
+
+    const [highlightedCells, setHighlightedCells] = useState<ReadonlySet<string>>(new Set());
+    const [selectedCardId,   setSelectedCardId]   = useState<string | undefined>();
 
     function handleCellClick(cell: Cell) {
-        setHighlighted(prev => {
+        setHighlightedCells(prev => {
             const next = new Set(prev);
-            if (next.has(cell.id)) {
-                next.delete(cell.id);
-            } else {
-                next.add(cell.id);
-            }
+            if (next.has(cell.id)) next.delete(cell.id);
+            else next.add(cell.id);
             return next;
         });
     }
 
+    function handleCardSelect(card: BaseCard) {
+        setSelectedCardId(prev => prev === card.id ? undefined : card.id);
+    }
+
     return (
-        <div style={{ maxWidth: 700, margin: '0 auto', padding: 16 }}>
-            <h1 style={{ textAlign: 'center', marginBottom: 16 }}>Landscape</h1>
-            <HexBoard
-                grid={grid}
-                onCellClick={handleCellClick}
-                highlightedCells={highlighted}
+        <div style={{
+            maxWidth:      700,
+            margin:        '0 auto',
+            height:        '100dvh',
+            display:       'flex',
+            flexDirection: 'column',
+        }}>
+            <SelectableCards
+                cards={selectableCards}
+                selectedId={selectedCardId}
+                onSelect={handleCardSelect}
             />
+            <PlayerHand
+                cards={handCards}
+                selectedId={selectedCardId}
+                onSelect={handleCardSelect}
+            />
+            {/* padding absorbs the drop-shadow so it's not clipped at screen edges */}
+            <div style={{ padding: '0 4px 6px' }}>
+                <HexBoard
+                    grid={grid}
+                    onCellClick={handleCellClick}
+                    highlightedCells={highlightedCells}
+                />
+            </div>
             <PWABadge />
         </div>
     );
