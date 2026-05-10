@@ -192,6 +192,7 @@ function CubeIndicator({ stackHeight, hexW }: CubeIndicatorProps) {
                 marginTop,
                 zIndex:        20,
                 pointerEvents: 'none',
+                userSelect: 'none',
             }}
         />
     );
@@ -240,6 +241,7 @@ function TokensWrapper({ stack, hexW }: TokensWrapperProps) {
                         marginTop:     margins[idx],
                         zIndex:        idx + 1,
                         pointerEvents: 'none',
+                        userSelect: 'none',
                     }}
                 />
             ))}
