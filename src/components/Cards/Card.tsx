@@ -26,7 +26,7 @@ export function Card({ card, selected, onClick }: CardProps) {
                 overflow:     'visible',
                 flexShrink:   0,
                 cursor:       onClick ? 'pointer' : 'default',
-                outline:      selected ? `3px solid #fff` : '3px solid transparent',
+                outline:      selected ? `3px dashed #f5e97a` : '3px solid transparent',
                 outlineOffset: 2,
                 display:      'flex',
                 flexDirection: 'row',
