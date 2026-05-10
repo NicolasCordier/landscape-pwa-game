@@ -140,7 +140,7 @@ export class SpiritCard extends BaseCard {
 
 export const ALL_ANIMAL_CARDS = [
     new AnimalCard('crocodile',     'RIVER',    ['RIVER',  null,     null,    'TREE_3',   null,    null], '0',      [15, 9, 4]),
-    new AnimalCard('ray',           'RIVER',    ['MTN_1',  null,     null,    'MTN_1',    null,    null], 'center', [16, 10, 4]),
+    new AnimalCard('ray',           'RIVER',    ['MTN_1',  'MTN_1',  null,     null,      null,    null], 'center', [16, 10, 4]),
     new AnimalCard('fish',          'RIVER',    ['MTN_3',  null,     null,     null,      null,    null], 'center', [16, 10, 6, 3]),
     new AnimalCard('otter',         'TREE_1',   ['RIVER',  null,     null,     'TREE_1',  null,    null], '0',      [16, 10, 5]),
     new AnimalCard('frog',          'RIVER',    ['TREE_1', null,     null,     null,      null,    null], 'center', [2, 4, 6, 10, 15]),
