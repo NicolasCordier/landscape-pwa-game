@@ -1,10 +1,7 @@
 import type { BaseCard } from '../../game/cards';
 import { TERRAIN_COLOR } from './colors';
+import { formatCardName as formatName } from './cardName';
 import { PatternPreview } from './PatternPreview';
-
-function formatName(id: string): string {
-    return id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
 
 interface CardProps {
     card:      BaseCard;

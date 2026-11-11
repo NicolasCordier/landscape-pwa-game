@@ -69,7 +69,7 @@ const CURRENT_VERSION = 1;
 // ─── Board serialization ──────────────────────────────────────────────────────
 
 // Serializes board cells to a flat column-major array
-function serializeBoard(grid: BoardGrid): SerializedCell[] {
+export function serializeBoard(grid: BoardGrid): SerializedCell[] {
     const result: SerializedCell[] = [];
     for (const col of grid) {
         for (const cell of col) {
@@ -80,7 +80,7 @@ function serializeBoard(grid: BoardGrid): SerializedCell[] {
 }
 
 // Applies serialized cell state to a freshly generated board (matched by column-major position)
-function restoreBoard(grid: BoardGrid, saved: SerializedCell[]): void {
+export function restoreBoard(grid: BoardGrid, saved: SerializedCell[]): void {
     let idx = 0;
     for (const col of grid) {
         for (const cell of col) {
@@ -100,7 +100,7 @@ export function serializeCard(card: BaseCard): SerializedCard {
 }
 
 // Looks up a card template from the registry and clones it with the saved cubeIndex
-function deserializeCard(saved: SerializedCard): BaseCard | null {
+export function deserializeCard(saved: SerializedCard): BaseCard | null {
     const template =
         ALL_ANIMAL_CARDS.find(c => c.id === saved.cardId) ??
         ALL_SPIRIT_CARDS.find(c => c.id === saved.cardId) ??

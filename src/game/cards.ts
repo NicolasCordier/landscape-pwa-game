@@ -47,28 +47,35 @@ export abstract class BaseCard {
         return this.cubeIndex > 0;
     }
 
-    // Returns valid cubeCell targets across all board cells (for UI highlighting)
+    // Returns valid cubeCell targets across all board cells (for UI highlighting).
+    // Every matching rotation counts: a center can offer several cube cells.
     getValidPlacements(allCells: Cell[]): Cell[] {
         const seen = new Set<string>();
         const result: Cell[] = [];
         for (const cell of allCells) {
-            const placement = this.canPlace(cell);
-            if (placement !== null && !seen.has(placement.cubeCell.id)) {
-                seen.add(placement.cubeCell.id);
-                result.push(placement.cubeCell);
+            for (const placement of this.matchRotations(cell)) {
+                if (!seen.has(placement.cubeCell.id)) {
+                    seen.add(placement.cubeCell.id);
+                    result.push(placement.cubeCell);
+                }
             }
         }
         return result;
     }
 
     // Checks if the card pattern matches at the given center cell across all 6 rotations.
-    // Returns the matching rotation and the target cubeCell, or null if no match.
+    // Returns the first matching rotation and its target cubeCell, or null if no match.
     canPlace(center: Cell): { rotation: number; cubeCell: Cell } | null {
+        return this.matchRotations(center)[0] ?? null;
+    }
+
+    private matchRotations(center: Cell): { rotation: number; cubeCell: Cell }[] {
+        const matches: { rotation: number; cubeCell: Cell }[] = [];
         if (!this.canPlaceMore()) {
-            return null;
+            return matches;
         }
         if (center.detectTerrain() !== this.centerTerrain) {
-            return null;
+            return matches;
         }
         for (let rot = 0; rot < 6; rot++) {
             let ok = true;
@@ -86,15 +93,16 @@ export abstract class BaseCard {
             if (!ok) {
                 continue;
             }
-            // cubeAt is always 'center' or '0', so neighbor index = rot (since (0+rot)%6 = rot)
-        const cubeCell = this.cubeAt === 'center'
+            // Neighbor i is matched against pattern[(i + rot) % 6], so pattern[0]
+            // sits on the neighbor i where (i + rot) % 6 === 0, i.e. i = (6 - rot) % 6
+            const cubeCell = this.cubeAt === 'center'
                 ? center
-                : center.neighbors[rot];
+                : center.neighbors[(6 - rot) % 6];
             if (cubeCell && !cubeCell.hasCube) {
-                return { rotation: rot, cubeCell };
+                matches.push({ rotation: rot, cubeCell });
             }
         }
-        return null;
+        return matches;
     }
 
     // Decrements cubeIndex and marks the target cell as occupied

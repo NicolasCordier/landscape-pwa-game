@@ -1,45 +1,249 @@
-#root {
-    max-width: 1280px;
+/* ─── Game screen layout ─────────────────────────────────────────────────────
+   Portrait : offer / board / hand stacked.
+   Landscape: board on the left, offer and hand on the right.
+   Only the grid changes between orientations; components stay the same. */
+
+.game {
+    box-sizing: border-box;
+    height: 100dvh;
+    max-width: 700px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 6px;
+    display: grid;
+    gap: 6px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+        "offer"
+        "board"
+        "hand";
+}
+
+.area-offer { grid-area: offer; display: flex; gap: 8px; align-items: center; justify-content: center; }
+.area-board { grid-area: board; min-height: 0; min-width: 0; }
+.area-hand  { grid-area: hand; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+
+@media (orientation: landscape) {
+    .game {
+        max-width: none;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas:
+            "board offer"
+            "board hand";
+    }
+    .area-hand { justify-content: flex-end; }
+}
+
+/* Score screen reuses the grid: board + side panel */
+.score-screen {
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "board"
+        "side";
+}
+.area-side { grid-area: side; }
+
+@media (orientation: landscape) {
+    .score-screen {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: minmax(0, 1fr);
+        grid-template-areas: "board side";
+    }
+}
+
+/* ─── Buttons ──────────────────────────────────────────────────────────────── */
+
+button.primary {
+    background-color: #5d8a4e;
+    color: #fff;
+}
+button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* ─── Token offer ──────────────────────────────────────────────────────────── */
+
+.token-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.token-group {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid #8b7355;
+    background: #f5efe6;
+    overflow: hidden;
+}
+.token-group:disabled { opacity: 0.35; }
+.token-group:not(:disabled) { box-shadow: 0 0 0 2px #d0ef79; }
+
+.tokens-to-place {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.token-button {
+    width: 44px;
+    height: 44px;
+    padding: 2px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: #f5efe6;
+}
+.token-button img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.token-button.selected { border-color: #f5e97a; box-shadow: 0 0 0 2px #5d8a4e; }
+
+/* ─── Cards ────────────────────────────────────────────────────────────────── */
+
+.card-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.compact-card {
+    position: relative;
+    box-sizing: border-box;
+    width: 66px;
+    min-height: 104px;
+    padding: 3px 3px 4px;
+    border-radius: 6px;
+    border-top: 6px solid transparent;
+    background: #f5f0e8;
+    color: #2a2118;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
+    user-select: none;
+    outline: 3px solid transparent;
+    outline-offset: 1px;
+}
+.compact-card.selected { outline: 3px dashed #f5e97a; }
+.compact-card.disabled { opacity: 0.5; cursor: default; }
+.compact-card.empty {
+    background: transparent;
+    border: 2px dashed #8b735580;
+    box-shadow: none;
+    cursor: default;
+}
+
+.compact-card-name {
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.compact-card-points {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px;
+}
+.compact-card-point {
+    min-width: 13px;
+    padding: 0 1px;
+    border: 1px solid;
+    border-radius: 7px;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 12px;
     text-align: center;
 }
 
-.logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
+.compact-card-zoom {
+    position: absolute;
+    top: -10px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+    background: #2a2118;
+    color: #fff;
 }
 
-.logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
+/* ─── Overlay (large card) ─────────────────────────────────────────────────── */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.logo.react:hover {
-    filter: drop-shadow(0 0 2em #61dafbaa);
+.card-zoom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
 }
-
-@keyframes logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+/* The full card is 80×200: scale it up, keeping its layout box in sync */
+.card-zoom-card {
+    width: 144px;
+    height: 360px;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-    a:nth-of-type(2) .logo {
-        animation: logo-spin infinite 20s linear;
-    }
+.card-zoom-card > div {
+    transform: scale(1.8);
+    transform-origin: top left;
 }
-
-.card {
-    padding: 2em;
+@media (orientation: landscape) and (max-height: 500px) {
+    .card-zoom { flex-direction: row; }
+    .card-zoom-card { width: 104px; height: 260px; }
+    .card-zoom-card > div { transform: scale(1.3); }
 }
+.card-zoom-note { margin: 0; color: #fff; font-size: 14px; }
+.card-zoom-actions { display: flex; flex-direction: column; gap: 8px; }
 
-.read-the-docs {
-    color: #888;
+/* ─── Turn status and actions ──────────────────────────────────────────────── */
+
+.turn-status {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    justify-content: center;
+    font-size: 14px;
 }
+.turn-number { font-weight: 700; white-space: nowrap; }
+
+.turn-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+.turn-actions button { padding: 0.5em 0.9em; font-size: 14px; }
+
+/* ─── Score screen ─────────────────────────────────────────────────────────── */
+
+.score-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.score-panel h2 { margin: 0; font-size: 20px; }
+.score-turns { margin: 0; opacity: 0.7; font-size: 13px; }
+.score-table { border-collapse: collapse; font-size: 14px; min-width: 180px; }
+.score-table td { padding: 2px 8px; }
+.score-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.score-total td { border-top: 1px solid currentColor; font-weight: 700; }

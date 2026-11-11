@@ -1,29 +1,30 @@
 import type { BaseCard } from '../../game/cards';
-import { Card } from './Card';
+import { CompactCard } from './CompactCard';
 
 interface PlayerHandProps {
     cards:       BaseCard[];
+    maxCards:    number;
     selectedId?: string;
-    onSelect?:   (card: BaseCard) => void;
+    onSelect:    (card: BaseCard) => void;
+    onZoom:      (card: BaseCard) => void;
 }
 
-export function PlayerHand({ cards, selectedId, onSelect }: PlayerHandProps) {
+// Unfinished cards in hand; selecting one shows where its cubes can go
+export function PlayerHand({ cards, maxCards, selectedId, onSelect, onZoom }: PlayerHandProps) {
+    const emptySlots = Math.max(0, maxCards - cards.length);
     return (
-        <div style={{
-            flex:           1,
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'space-between',
-            gap:            8,
-            padding:        '0 4px',
-        }}>
+        <div className="card-row">
             {cards.map(card => (
-                <Card
+                <CompactCard
                     key={card.id}
                     card={card}
                     selected={card.id === selectedId}
-                    onClick={onSelect}
+                    onClick={() => onSelect(card)}
+                    onZoom={() => onZoom(card)}
                 />
+            ))}
+            {Array.from({ length: emptySlots }, (_, i) => (
+                <div key={`empty-${i}`} className="compact-card empty" aria-hidden />
             ))}
         </div>
     );

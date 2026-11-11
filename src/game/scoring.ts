@@ -140,22 +140,41 @@ export function scoreAnimals(cards: { getScore(): number }[]): number {
 
 // ─── Final score ──────────────────────────────────────────────────────────────
 
+export interface ScoreBreakdown {
+    trees:     number;
+    mountains: number;
+    fields:    number;
+    buildings: number;
+    river:     number;
+    animals:   number;
+    spirit:    number;
+    total:     number;
+}
+
+export function computeScoreBreakdown(
+    cells: Cell[],
+    cards: { getScore(): number }[],
+    face: 'A' | 'B',
+    spiritBonusFn?: (cells: Cell[]) => number
+): ScoreBreakdown {
+    const parts = {
+        trees:     scoreTrees(cells),
+        mountains: scoreMountains(cells),
+        fields:    scoreFields(cells),
+        buildings: scoreBuildings(cells),
+        river:     face === 'A' ? scoreRiverFaceA(cells) : scoreRiverFaceB(cells),
+        animals:   scoreAnimals(cards),
+        spirit:    spiritBonusFn ? spiritBonusFn(cells) : 0,
+    };
+    const total = Object.values(parts).reduce((sum, v) => sum + v, 0);
+    return { ...parts, total };
+}
+
 export function computeFinalScore(
     cells: Cell[],
     cards: { getScore(): number }[],
     face: 'A' | 'B',
     spiritBonusFn?: (cells: Cell[]) => number
 ): number {
-    const riverScore = face === 'A' ? scoreRiverFaceA(cells) : scoreRiverFaceB(cells);
-    const spiritBonus = spiritBonusFn ? spiritBonusFn(cells) : 0;
-
-    return (
-        scoreTrees(cells) +
-        scoreMountains(cells) +
-        scoreFields(cells) +
-        scoreBuildings(cells) +
-        riverScore +
-        scoreAnimals(cards) +
-        spiritBonus
-    );
+    return computeScoreBreakdown(cells, cards, face, spiritBonusFn).total;
 }

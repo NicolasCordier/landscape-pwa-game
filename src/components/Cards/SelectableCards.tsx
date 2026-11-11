@@ -1,29 +1,17 @@
 import type { BaseCard } from '../../game/cards';
-import { Card } from './Card';
+import { CompactCard } from './CompactCard';
 
 interface SelectableCardsProps {
-    cards:       BaseCard[];
-    selectedId?: string;
-    onSelect?:   (card: BaseCard) => void;
+    cards:  BaseCard[];
+    onOpen: (card: BaseCard) => void; // opens the card in large, where it can be taken
 }
 
-export function SelectableCards({ cards, selectedId, onSelect }: SelectableCardsProps) {
+// Face-up animal cards that can be taken
+export function SelectableCards({ cards, onOpen }: SelectableCardsProps) {
     return (
-        <div style={{
-            flex:           1,
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'flex-end',
-            gap:            8,
-            padding:        '0 4px',
-        }}>
+        <div className="card-row">
             {cards.map(card => (
-                <Card
-                    key={card.id}
-                    card={card}
-                    selected={card.id === selectedId}
-                    onClick={onSelect}
-                />
+                <CompactCard key={card.id} card={card} onClick={() => onOpen(card)} />
             ))}
         </div>
     );

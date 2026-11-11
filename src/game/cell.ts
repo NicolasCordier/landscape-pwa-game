@@ -3,10 +3,14 @@ import type { Terrain } from './terrain';
 export type Token = 'GREEN' | 'GRAY' | 'BROWN' | 'YELLOW' | 'BLUE' | 'RED';
 
 export class Cell {
-    id = crypto.randomUUID();
+    readonly id: string; // position-based ("col-row"), stable across board rebuilds
     neighbors: (Cell | null)[] = new Array(6).fill(null); // fixed 6-slot array, null = board edge
     stack: Token[] = [];
     hasCube = false;
+
+    constructor(id: string) {
+        this.id = id;
+    }
 
     // Accessors for stack metadata (avoid raw stack access in business logic)
     top(): Token | undefined {
@@ -30,6 +34,10 @@ export class Cell {
     }
 
     canStack(token: Token): boolean {
+        // A cube locks the cell: no more tokens on it
+        if (this.hasCube) {
+            return false;
+        }
         // Any token can be placed on an empty cell (official rule: always valid on empty)
         if (this.height() === 0) {
             return true;

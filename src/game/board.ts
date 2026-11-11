@@ -11,7 +11,7 @@ export function generateBoard(nbColumns: number, nbLines: number): BoardGrid {
     const grid: BoardGrid = [];
     for (let col = 0; col < nbColumns; col++) {
         const rows = col % 2 === 0 ? nbLines : nbLines - 1;
-        grid.push(Array.from({ length: rows }, () => new Cell()));
+        grid.push(Array.from({ length: rows }, (_, row) => new Cell(`${col}-${row}`)));
     }
     linkNeighbors(grid);
     return grid;
