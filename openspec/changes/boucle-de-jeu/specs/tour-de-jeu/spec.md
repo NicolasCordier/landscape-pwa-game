@@ -1,0 +1,97 @@
+# Spec Delta
+
+## Purpose
+
+Décrit le déroulement d'un tour de partie solo : l'offre de jetons, la pose des jetons, l'offre et la main de cartes animaux, la pose des cubes, la fin et l'annulation du tour.
+
+## ADDED Requirements
+
+### Requirement: Mise en place d'une partie
+Au début d'une partie, le système SHALL préparer un plateau vide (face A), un sac de jetons mélangé, une offre centrale de 3 groupes de 3 jetons tirés du sac, une pioche de cartes animaux mélangée, une offre de 3 cartes visibles tirées de cette pioche et une main vide. Aucune carte esprit n'est utilisée.
+
+#### Scenario: Nouvelle partie
+- **WHEN** le joueur lance une nouvelle partie
+- **THEN** le plateau ne contient aucun jeton ni cube
+- **AND** l'offre centrale affiche 3 groupes de 3 jetons
+- **AND** 3 cartes animaux sont proposées et la main est vide
+- **AND** le compteur de tours vaut 1
+
+### Requirement: Choix d'un groupe de jetons
+À chaque tour, le joueur MUST choisir exactement un groupe de l'offre centrale. Une fois le choix fait, il ne peut plus en changer, sauf en recommençant le tour.
+
+#### Scenario: Choisir un groupe
+- **WHEN** le joueur choisit un groupe alors qu'il n'en a pas encore pris ce tour
+- **THEN** les 3 jetons du groupe deviennent les jetons à poser
+- **AND** les autres groupes de l'offre ne peuvent plus être choisis pendant ce tour
+
+### Requirement: Pose des jetons
+Le joueur SHALL poser les 3 jetons du groupe choisi, un par un et dans l'ordre de son choix, chacun sur une case où il est autorisé par les règles d'empilement. Un jeton posé ne peut plus être déplacé.
+
+#### Scenario: Poser un jeton sur une case autorisée
+- **WHEN** le joueur sélectionne un jeton restant puis une case autorisée pour ce jeton
+- **THEN** le jeton est ajouté en haut de la pile de cette case
+- **AND** il est retiré des jetons à poser
+
+#### Scenario: Case refusée
+- **WHEN** le joueur sélectionne un jeton puis une case où ce jeton n'est pas autorisé
+- **THEN** le plateau n'est pas modifié et le jeton reste à poser
+
+### Requirement: Case occupée par un cube
+Une case portant un cube MUST refuser tout nouveau jeton.
+
+#### Scenario: Jeton sur une case avec cube
+- **WHEN** le joueur tente de poser un jeton sur une case portant un cube
+- **THEN** la pose est refusée
+
+### Requirement: Prise d'une carte animal
+Le système SHALL permettre au joueur de prendre au plus une carte de l'offre par tour, à condition qu'il ait moins de 4 cartes non terminées en main. L'offre MUST être aussitôt complétée depuis la pioche tant que celle-ci n'est pas vide.
+
+#### Scenario: Prendre une carte
+- **WHEN** le joueur a moins de 4 cartes non terminées et n'a pas encore pris de carte ce tour
+- **THEN** la carte choisie passe dans sa main
+- **AND** l'offre est complétée par la première carte de la pioche si elle en contient
+
+#### Scenario: Main pleine
+- **WHEN** le joueur a déjà 4 cartes non terminées en main
+- **THEN** il ne peut pas prendre de carte
+
+#### Scenario: Deuxième carte dans le même tour
+- **WHEN** le joueur a déjà pris une carte ce tour
+- **THEN** il ne peut pas en prendre une autre avant le tour suivant
+
+### Requirement: Pose d'un cube
+Pendant son tour, le joueur MAY poser autant de cubes qu'il le peut. Pour poser un cube d'une carte de sa main, le motif de la carte MUST être présent sur le plateau, dans l'une des 6 rotations, et la case désignée pour le cube MUST ne pas déjà porter de cube.
+
+#### Scenario: Poser un cube sur une case valide
+- **WHEN** le joueur sélectionne une carte de sa main puis une case où un cube de cette carte peut être posé
+- **THEN** la case reçoit un cube
+- **AND** la carte compte un cube restant de moins
+
+#### Scenario: Motif tourné avec cube sur un voisin
+- **WHEN** le motif d'une carte dont le cube va sur la case voisine est présent sur le plateau dans n'importe laquelle des 6 rotations
+- **THEN** la case proposée pour le cube est la case du plateau qui correspond à la position du cube sur la carte, pour cette rotation
+
+#### Scenario: Carte terminée
+- **WHEN** le joueur pose le dernier cube d'une carte
+- **THEN** la carte quitte la main et rejoint les cartes terminées
+- **AND** elle ne compte plus dans la limite de 4 cartes en main
+
+### Requirement: Fin du tour
+Le joueur SHALL pouvoir terminer son tour uniquement après avoir posé les 3 jetons du groupe choisi. À la fin du tour, l'emplacement du groupe pris est rechargé avec 3 jetons tirés du sac et le compteur de tours augmente de 1.
+
+#### Scenario: Terminer le tour
+- **WHEN** le joueur a posé ses 3 jetons et termine son tour
+- **THEN** l'emplacement vide de l'offre centrale reçoit 3 nouveaux jetons tirés du sac
+- **AND** les deux autres groupes restent en place
+- **AND** le tour suivant commence
+
+#### Scenario: Jetons encore à poser
+- **WHEN** il reste au moins un jeton à poser
+- **THEN** le joueur ne peut pas terminer son tour
+
+### Requirement: Recommencer le tour
+Le joueur SHALL pouvoir annuler toutes les actions du tour en cours et revenir à l'état exact du début de ce tour.
+
+#### Scenario: Annuler le tour
+- **WHEN** le joueur a pris un groupe, posé des jetons, pris une carte ou posé des cubes, puis recommence le tour
+- **THEN** le plateau, l'offre centrale, le sac, les cartes et la main reviennent à leur état du début du tour
