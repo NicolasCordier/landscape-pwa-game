@@ -44,12 +44,12 @@ Une case portant un cube MUST refuser tout nouveau jeton.
 - **THEN** la pose est refusée
 
 ### Requirement: Prise d'une carte animal
-Le système SHALL permettre au joueur de prendre au plus une carte de l'offre par tour, à condition qu'il ait moins de 4 cartes non terminées en main. L'offre MUST être aussitôt complétée depuis la pioche tant que celle-ci n'est pas vide.
+Le système SHALL permettre au joueur de prendre au plus une carte de l'offre par tour, à condition qu'il ait moins de 4 cartes non terminées en main. L'emplacement libéré dans l'offre MUST rester vide jusqu'à la fin du tour.
 
 #### Scenario: Prendre une carte
 - **WHEN** le joueur a moins de 4 cartes non terminées et n'a pas encore pris de carte ce tour
 - **THEN** la carte choisie passe dans sa main
-- **AND** l'offre est complétée par la première carte de la pioche si elle en contient
+- **AND** l'offre ne montre plus que les cartes restantes jusqu'à la fin du tour
 
 #### Scenario: Main pleine
 - **WHEN** le joueur a déjà 4 cartes non terminées en main
@@ -60,12 +60,12 @@ Le système SHALL permettre au joueur de prendre au plus une carte de l'offre pa
 - **THEN** il ne peut pas en prendre une autre avant le tour suivant
 
 ### Requirement: Défausse d'une carte de l'offre
-Au lieu de prendre une carte, le joueur SHALL pouvoir défausser une carte de l'offre. Prendre et défausser forment une seule action de carte : une seule des deux est possible par tour. La carte défaussée quitte la partie et l'offre MUST être aussitôt complétée depuis la pioche tant que celle-ci n'est pas vide. La défausse reste possible quand la main est pleine.
+Au lieu de prendre une carte, le joueur SHALL pouvoir défausser une carte de l'offre. Prendre et défausser forment une seule action de carte : une seule des deux est possible par tour. La carte défaussée quitte la partie et son emplacement dans l'offre MUST rester vide jusqu'à la fin du tour. La défausse reste possible quand la main est pleine.
 
 #### Scenario: Défausser une carte
 - **WHEN** le joueur n'a ni pris ni défaussé de carte ce tour et défausse une carte de l'offre
 - **THEN** la carte disparaît de l'offre sans entrer dans sa main
-- **AND** l'offre est complétée par la première carte de la pioche si elle en contient
+- **AND** aucune nouvelle carte n'apparaît avant la fin du tour
 
 #### Scenario: Défausse avec la main pleine
 - **WHEN** le joueur a 4 cartes non terminées en main et n'a pas encore fait d'action de carte ce tour
@@ -93,13 +93,18 @@ Pendant son tour, le joueur MAY poser autant de cubes qu'il le peut. Pour poser 
 - **AND** elle ne compte plus dans la limite de 4 cartes en main
 
 ### Requirement: Fin du tour
-Le joueur SHALL pouvoir terminer son tour uniquement après avoir posé les 3 jetons du groupe choisi. À la fin du tour, l'emplacement du groupe pris est rechargé avec 3 jetons tirés du sac et le compteur de tours augmente de 1.
+Le joueur SHALL pouvoir terminer son tour uniquement après avoir posé les 3 jetons du groupe choisi. À la fin du tour, l'emplacement du groupe pris est rechargé avec 3 jetons tirés du sac, l'offre de cartes est complétée jusqu'à 3 cartes depuis la pioche, et le compteur de tours augmente de 1.
 
 #### Scenario: Terminer le tour
 - **WHEN** le joueur a posé ses 3 jetons et termine son tour
 - **THEN** l'emplacement vide de l'offre centrale reçoit 3 nouveaux jetons tirés du sac
 - **AND** les deux autres groupes restent en place
 - **AND** le tour suivant commence
+
+#### Scenario: Recharge de l'offre de cartes
+- **WHEN** le joueur a pris ou défaussé une carte puis termine son tour
+- **THEN** l'offre est complétée par la première carte de la pioche au début du tour suivant
+- **AND** si la pioche est vide, l'offre reste avec moins de 3 cartes
 
 #### Scenario: Jetons encore à poser
 - **WHEN** il reste au moins un jeton à poser

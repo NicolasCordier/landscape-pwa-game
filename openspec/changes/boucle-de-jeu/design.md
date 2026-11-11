@@ -74,7 +74,7 @@ Ces choix proviennent de l'exploration et sont décrits dans les specs. Les cons
 
 - Sac de 120 jetons. Composition initiale : bleu 23, gris 23, marron 21, vert 19, jaune 19, rouge 15. À rééquilibrer plus tard pour le jeu propre à Landscape.
 - Offre de 3 groupes ; seul l'emplacement pris est rechargé en fin de tour.
-- Offre de 3 cartes ; une seule action de carte par tour : prendre une carte (4 cartes non terminées au maximum en main) ou défausser une carte de l'offre.
+- Offre de 3 cartes ; une seule action de carte par tour : prendre une carte (4 cartes non terminées au maximum en main) ou défausser une carte de l'offre. L'emplacement libéré reste vide pendant le tour : l'offre n'est complétée depuis la pioche qu'en fin de tour, dans `END_TURN`.
 - Fin de partie : 2 cases vides ou moins, ou moins de 3 jetons dans le sac, vérifié en fin de tour.
 - Une case avec cube refuse les jetons : vérifié dans `Cell.canStack`.
 - Pas d'ordre imposé entre jetons, carte et cubes dans un tour : seule la pose des 3 jetons est obligatoire avant de terminer.

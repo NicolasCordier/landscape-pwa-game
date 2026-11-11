@@ -99,60 +99,91 @@ describe('TAKE_GROUP and PLACE_TOKEN', () => {
     });
 });
 
+// Id of the card in the given offer slot (fails the test if the slot is empty)
+function offered(s: GameState, slot: number): string {
+    const id = s.cardOffer[slot];
+    if (id === null) {
+        throw new Error(`Offer slot ${slot} is empty`);
+    }
+    return id;
+}
+
+// Takes the 3 tokens of group 0, places them and ends the turn
+function finishTurn(s: GameState): GameState {
+    return gameReducer(placeAllTokens(gameReducer(s, { type: 'TAKE_GROUP', index: 0 })), { type: 'END_TURN' });
+}
+
+const FULL_HAND = ['bear', 'wolf', 'duck', 'frog'].map(cardId => ({ cardId, cubeIndex: 1 }));
+
 describe('TAKE_CARD', () => {
-    it('moves the card to the hand and refills the offer', () => {
+    it('moves the card to the hand and leaves its slot empty until the end of the turn', () => {
         const s = newGame(3);
-        const [taken] = s.cardOffer;
+        const taken = offered(s, 1);
         const next = gameReducer(s, { type: 'TAKE_CARD', cardId: taken });
         expect(next.hand.map(c => c.cardId)).toEqual([taken]);
-        expect(next.cardOffer).toHaveLength(3);
-        expect(next.cardOffer).not.toContain(taken);
-        expect(next.cardOffer).toContain(s.cardDeck[0]);
+        expect(next.cardOffer).toEqual([s.cardOffer[0], null, s.cardOffer[2]]);
+        expect(next.cardDeck).toEqual(s.cardDeck);
     });
 
     it('refuses a card when the hand is full', () => {
-        const s: GameState = {
-            ...newGame(3),
-            hand: ['bear', 'wolf', 'duck', 'frog'].map(cardId => ({ cardId, cubeIndex: 1 })),
-        };
-        expect(gameReducer(s, { type: 'TAKE_CARD', cardId: s.cardOffer[0] })).toBe(s);
+        const s: GameState = { ...newGame(3), hand: FULL_HAND };
+        expect(gameReducer(s, { type: 'TAKE_CARD', cardId: offered(s, 0) })).toBe(s);
     });
 
     it('refuses a second card in the same turn', () => {
-        const s = run(newGame(3), { type: 'TAKE_CARD', cardId: newGame(3).cardOffer[0] });
-        expect(gameReducer(s, { type: 'TAKE_CARD', cardId: s.cardOffer[0] })).toBe(s);
+        const start = newGame(3);
+        const s = gameReducer(start, { type: 'TAKE_CARD', cardId: offered(start, 0) });
+        expect(gameReducer(s, { type: 'TAKE_CARD', cardId: offered(s, 1) })).toBe(s);
     });
 });
 
 describe('DISCARD_CARD', () => {
     it('removes the card from the offer without adding it to the hand', () => {
         const s = newGame(3);
-        const [discarded] = s.cardOffer;
+        const discarded = offered(s, 0);
         const next = gameReducer(s, { type: 'DISCARD_CARD', cardId: discarded });
         expect(next.hand).toEqual([]);
-        expect(next.cardOffer).toHaveLength(3);
-        expect(next.cardOffer).not.toContain(discarded);
-        expect(next.cardOffer).toContain(s.cardDeck[0]);
-        expect(next.cardDeck).not.toContain(discarded);
+        expect(next.cardOffer).toEqual([null, s.cardOffer[1], s.cardOffer[2]]);
+        expect(next.cardDeck).toEqual(s.cardDeck);
     });
 
     it('is allowed when the hand is full', () => {
-        const s: GameState = {
-            ...newGame(3),
-            hand: ['bear', 'wolf', 'duck', 'frog'].map(cardId => ({ cardId, cubeIndex: 1 })),
-        };
-        const next = gameReducer(s, { type: 'DISCARD_CARD', cardId: s.cardOffer[0] });
-        expect(next.cardOffer).not.toContain(s.cardOffer[0]);
+        const s: GameState = { ...newGame(3), hand: FULL_HAND };
+        const next = gameReducer(s, { type: 'DISCARD_CARD', cardId: offered(s, 0) });
+        expect(next.cardOffer[0]).toBeNull();
     });
 
     it('shares the single card action of the turn with TAKE_CARD', () => {
         const start = newGame(3);
-        const afterDiscard = gameReducer(start, { type: 'DISCARD_CARD', cardId: start.cardOffer[0] });
-        expect(gameReducer(afterDiscard, { type: 'TAKE_CARD', cardId: afterDiscard.cardOffer[0] })).toBe(afterDiscard);
-        expect(gameReducer(afterDiscard, { type: 'DISCARD_CARD', cardId: afterDiscard.cardOffer[0] })).toBe(afterDiscard);
+        const afterDiscard = gameReducer(start, { type: 'DISCARD_CARD', cardId: offered(start, 0) });
+        expect(gameReducer(afterDiscard, { type: 'TAKE_CARD', cardId: offered(afterDiscard, 1) })).toBe(afterDiscard);
+        expect(gameReducer(afterDiscard, { type: 'DISCARD_CARD', cardId: offered(afterDiscard, 1) })).toBe(afterDiscard);
 
-        const afterTake = gameReducer(start, { type: 'TAKE_CARD', cardId: start.cardOffer[0] });
-        expect(gameReducer(afterTake, { type: 'DISCARD_CARD', cardId: afterTake.cardOffer[0] })).toBe(afterTake);
+        const afterTake = gameReducer(start, { type: 'TAKE_CARD', cardId: offered(start, 0) });
+        expect(gameReducer(afterTake, { type: 'DISCARD_CARD', cardId: offered(afterTake, 1) })).toBe(afterTake);
+    });
+});
+
+describe('card offer refill', () => {
+    it('refills the emptied slot from the deck only at the end of the turn', () => {
+        const start = newGame(3);
+        const afterTake = gameReducer(start, { type: 'TAKE_CARD', cardId: offered(start, 1) });
+        const next = finishTurn(afterTake);
+        expect(next.cardOffer).toEqual([start.cardOffer[0], start.cardDeck[0], start.cardOffer[2]]);
+        expect(next.cardDeck).toEqual(start.cardDeck.slice(1));
+    });
+
+    it('refills after a discard too, and allows a new card action', () => {
+        const start = newGame(3);
+        const next = finishTurn(gameReducer(start, { type: 'DISCARD_CARD', cardId: offered(start, 2) }));
+        expect(next.cardOffer[2]).toBe(start.cardDeck[0]);
+        expect(next.cardActionThisTurn).toBe(false);
+    });
+
+    it('keeps the slot empty when the deck is empty', () => {
+        const start: GameState = { ...newGame(3), cardDeck: [] };
+        const next = finishTurn(gameReducer(start, { type: 'TAKE_CARD', cardId: offered(start, 0) }));
+        expect(next.cardOffer[0]).toBeNull();
     });
 });
 
@@ -225,7 +256,7 @@ describe('END_TURN', () => {
 describe('RESTART_TURN', () => {
     it('restores the exact state of the turn start', () => {
         const start = newGame(9);
-        let s = run(start, { type: 'TAKE_GROUP', index: 2 }, { type: 'TAKE_CARD', cardId: start.cardOffer[1] });
+        let s = run(start, { type: 'TAKE_GROUP', index: 2 }, { type: 'TAKE_CARD', cardId: offered(start, 1) });
         s = placeAllTokens(s);
         expect(gameReducer(s, { type: 'RESTART_TURN' })).toEqual(start);
     });

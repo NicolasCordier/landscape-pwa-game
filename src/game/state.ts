@@ -26,7 +26,7 @@ export interface TurnData {
     tokenBag:          Token[];
     tokensToPlace:     Token[];
     cardDeck:          string[];
-    cardOffer:         string[];
+    cardOffer:         (string | null)[]; // null = slot emptied this turn
     hand:              CardState[];        // unfinished cards
     completed:         CardState[];        // finished cards
     cardActionThisTurn: boolean;
@@ -118,12 +118,15 @@ export function canTakeCard(state: GameState): boolean {
 }
 
 // Removes a card from the offer and refills it from the deck
-function withoutOfferCard(state: GameState, cardId: string): Pick<GameState, 'cardOffer' | 'cardDeck'> {
-    const [refill, ...cardDeck] = state.cardDeck;
-    const cardOffer = state.cardOffer.filter(id => id !== cardId);
-    if (refill !== undefined) {
-        cardOffer.push(refill);
-    }
+// Empties the card's slot in the offer; it is refilled at the end of the turn
+function withoutOfferCard(state: GameState, cardId: string): Pick<GameState, 'cardOffer'> {
+    return { cardOffer: state.cardOffer.map(id => id === cardId ? null : id) };
+}
+
+// Fills the empty offer slots from the deck, keeping card positions
+function refillCardOffer(state: GameState): Pick<GameState, 'cardOffer' | 'cardDeck'> {
+    const cardDeck = [...state.cardDeck];
+    const cardOffer = state.cardOffer.map(id => id ?? cardDeck.shift() ?? null);
     return { cardOffer, cardDeck };
 }
 
@@ -285,6 +288,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             const tokenOffer = state.tokenOffer.map(g => g ?? tokenBag.splice(0, SOLO_CONFIG.groupSize));
             const next: GameState = {
                 ...state,
+                ...refillCardOffer(state),
                 tokenOffer,
                 tokenBag,
                 cardActionThisTurn: false,

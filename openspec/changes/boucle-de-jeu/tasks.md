@@ -41,6 +41,7 @@
 
 - [x] 6.1 Implémenter `DISCARD_CARD` (action de carte partagée avec `TAKE_CARD`, une par tour, possible main pleine, recharge de l'offre) ; vérifier par des tests les scénarios « Défausser une carte », « Défausse avec la main pleine » et « Une seule action de carte par tour »
 - [x] 6.2 Ajouter le bouton « Défausser cette carte » dans la vue agrandie d'une carte de l'offre ; vérifier dans le navigateur qu'une carte défaussée quitte l'offre sans entrer en main, puis que prendre une carte n'est plus possible ce tour
+- [x] 6.3 Ne compléter l'offre de cartes qu'en fin de tour (`END_TURN`), pour la prise comme pour la défausse ; vérifier par des tests que l'emplacement reste vide pendant le tour puis est rechargé au tour suivant, et dans le navigateur que la nouvelle carte n'apparaît qu'après « Terminer le tour »
 
 ## 7. Vérification d'ensemble
 

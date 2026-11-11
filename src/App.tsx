@@ -35,7 +35,7 @@ function App() {
     const [zoom, setZoom] = useState<Zoom>(null);
 
     const grid       = useMemo(() => buildGrid(state.face, state.board), [state.face, state.board]);
-    const offerCards = useMemo(() => state.cardOffer.map(cardTemplate), [state.cardOffer]);
+    const offerCards = useMemo(() => state.cardOffer.map(id => id === null ? null : cardTemplate(id)), [state.cardOffer]);
     const handCards  = useMemo(() => state.hand.map(buildCard), [state.hand]);
 
     // Drop a selection that no longer points to anything (token placed, card finished, turn restarted)
