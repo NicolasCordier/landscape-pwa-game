@@ -1,5 +1,6 @@
 import type { BaseCard } from '../../game/cards';
 import { Card } from './Card';
+import { SPIRIT_BONUS_TEXT, isSpirit } from './spiritText';
 
 export interface CardZoomAction {
     label:    string;
@@ -22,6 +23,11 @@ export function CardZoom({ card, onClose, actions = [], note }: CardZoomProps) {
                 <div className="card-zoom-card">
                     <Card card={card} />
                 </div>
+                {isSpirit(card) && (
+                    <p className="card-zoom-bonus">
+                        <strong>Bonus de l'esprit</strong> (si son cube est posé) : {SPIRIT_BONUS_TEXT[card.id]}
+                    </p>
+                )}
                 {note && <p className="card-zoom-note">{note}</p>}
                 <div className="card-zoom-actions">
                     {actions.map(action => (

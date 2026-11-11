@@ -6,7 +6,9 @@ interface ScoreScreenProps {
     grid:      BoardGrid;
     score:     ScoreBreakdown;
     turns:     number;
+    spiritName?: string; // spirit taken this game, if any
     onReplay:  () => void;
+    onHome:    () => void;
 }
 
 const CATEGORIES: { key: keyof Omit<ScoreBreakdown, 'total'>; label: string }[] = [
@@ -19,7 +21,7 @@ const CATEGORIES: { key: keyof Omit<ScoreBreakdown, 'total'>; label: string }[] 
     { key: 'spirit',    label: 'Esprit' },
 ];
 
-export function ScoreScreen({ grid, score, turns, onReplay }: ScoreScreenProps) {
+export function ScoreScreen({ grid, score, turns, spiritName, onReplay, onHome }: ScoreScreenProps) {
     return (
         <div className="game score-screen">
             <div className="area-board">
@@ -32,7 +34,7 @@ export function ScoreScreen({ grid, score, turns, onReplay }: ScoreScreenProps) 
                     <tbody>
                         {CATEGORIES.map(({ key, label }) => (
                             <tr key={key}>
-                                <td>{label}</td>
+                                <td>{key === 'spirit' && spiritName ? `${label} (${spiritName})` : label}</td>
                                 <td>{score[key]}</td>
                             </tr>
                         ))}
@@ -42,7 +44,10 @@ export function ScoreScreen({ grid, score, turns, onReplay }: ScoreScreenProps) 
                         </tr>
                     </tbody>
                 </table>
-                <button type="button" className="primary" onClick={onReplay}>Rejouer</button>
+                <div className="score-actions">
+                    <button type="button" onClick={onHome}>Accueil</button>
+                    <button type="button" className="primary" onClick={onReplay}>Rejouer</button>
+                </div>
             </div>
         </div>
     );

@@ -247,3 +247,63 @@ button:disabled {
 .score-table td { padding: 2px 8px; }
 .score-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .score-total td { border-top: 1px solid currentColor; font-weight: 700; }
+.score-actions { display: flex; gap: 8px; }
+
+/* ─── Spirits ──────────────────────────────────────────────────────────────── */
+
+.compact-card-spirit {
+    padding: 0 4px;
+    border: 1px solid;
+    border-radius: 7px;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 12px;
+    text-transform: uppercase;
+}
+.spirit-none {
+    font: inherit;
+    font-size: 12px;
+    color: inherit;
+    justify-content: center;
+    cursor: pointer;
+}
+.card-zoom-bonus {
+    max-width: 280px;
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #f5f0e8;
+    color: #2a2118;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+/* ─── Home screen ──────────────────────────────────────────────────────────── */
+
+.home-screen {
+    box-sizing: border-box;
+    min-height: 100dvh;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 24px;
+}
+.home-title { margin: 0; text-align: center; font-size: 2.6em; }
+.home-option { margin: 0; padding: 0; border: none; }
+.home-option legend { padding: 0; margin-bottom: 8px; font-weight: 600; }
+.face-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.face-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    border: 2px solid #8b735580;
+}
+.face-button.selected { border-color: #5d8a4e; background-color: #d0ef79; color: #2a2118; }
+.face-label { font-weight: 700; font-size: 1.1em; }
+.face-detail { font-size: 12px; opacity: 0.75; }
+.home-start { font-size: 1.15em; padding: 0.8em; }

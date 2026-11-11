@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
+import { ALL_SPIRIT_CARDS } from './cards';
 import { seededRng, shuffle } from './config';
 import {
-    boardFromGrid, buildGrid, gameReducer, newGame, validCubeCells,
+    boardFromGrid, buildGrid, cardTemplate, gameReducer, newGame as setupGame, scoreOf, validCubeCells,
 } from './state';
-import type { CellState, GameAction, GameState } from './state';
+import type { CellState, Face, GameAction, GameState } from './state';
 
 function run(state: GameState, ...actions: GameAction[]): GameState {
     return actions.reduce(gameReducer, state);
+}
+
+// A game already started without a spirit (turn 1, ready to play)
+function newGame(seed: number, face: Face = 'A'): GameState {
+    return gameReducer(setupGame(seed, face), { type: 'CHOOSE_SPIRIT', cardId: null });
 }
 
 // Places the 3 tokens of the taken group on the first empty cells
@@ -259,5 +265,139 @@ describe('RESTART_TURN', () => {
         let s = run(start, { type: 'TAKE_GROUP', index: 2 }, { type: 'TAKE_CARD', cardId: offered(start, 1) });
         s = placeAllTokens(s);
         expect(gameReducer(s, { type: 'RESTART_TURN' })).toEqual(start);
+    });
+});
+
+describe('board face', () => {
+    it('sets up a 23-cell board on face A and a 25-cell board on face B', () => {
+        expect(setupGame(1, 'A').board).toHaveLength(23);
+        const b = setupGame(1, 'B');
+        expect(b.face).toBe('B');
+        expect(b.board).toHaveLength(25);
+        expect(b.board.every(c => c.stack.length === 0 && !c.hasCube)).toBe(true);
+    });
+
+    it('knows every spirit card, each with a single cube', () => {
+        for (const spirit of ALL_SPIRIT_CARDS) {
+            expect(cardTemplate(spirit.id).cubeIndex).toBe(1);
+        }
+    });
+});
+
+describe('spirit choice', () => {
+    const spiritIds = ALL_SPIRIT_CARDS.map(c => c.id);
+
+    it('offers 2 different spirits before turn 1', () => {
+        const s = setupGame(4, 'A');
+        expect(s.status).toBe('choosing-spirit');
+        expect(s.turn).toBe(1);
+        expect(s.spiritOffer).toHaveLength(2);
+        expect(new Set(s.spiritOffer).size).toBe(2);
+        expect(s.spiritOffer.every(id => spiritIds.includes(id))).toBe(true);
+    });
+
+    it('refuses turn actions until the spirit is chosen', () => {
+        const s = setupGame(4, 'A');
+        expect(gameReducer(s, { type: 'TAKE_GROUP', index: 0 })).toBe(s);
+        expect(gameReducer(s, { type: 'TAKE_CARD', cardId: s.cardOffer[0]! })).toBe(s);
+        expect(gameReducer(s, { type: 'DISCARD_CARD', cardId: s.cardOffer[0]! })).toBe(s);
+    });
+
+    it('takes a spirit into the hand', () => {
+        const start = setupGame(4, 'A');
+        const [taken] = start.spiritOffer;
+        const s = gameReducer(start, { type: 'CHOOSE_SPIRIT', cardId: taken });
+        expect(s.status).toBe('playing');
+        expect(s.hand).toEqual([{ cardId: taken, cubeIndex: 1 }]);
+        expect(s.spirit).toBe(taken);
+        expect(s.spiritOffer).toEqual([]);
+        expect(s.turnStart.hand).toEqual(s.hand);
+    });
+
+    it('starts with an empty hand when no spirit is taken', () => {
+        const s = gameReducer(setupGame(4, 'A'), { type: 'CHOOSE_SPIRIT', cardId: null });
+        expect(s.status).toBe('playing');
+        expect(s.hand).toEqual([]);
+        expect(s.spirit).toBeNull();
+        expect(s.spiritOffer).toEqual([]);
+    });
+
+    it('refuses a spirit that was not offered, and a second choice', () => {
+        const start = setupGame(4, 'A');
+        const other = spiritIds.find(id => !start.spiritOffer.includes(id))!;
+        expect(gameReducer(start, { type: 'CHOOSE_SPIRIT', cardId: other })).toBe(start);
+        const s = gameReducer(start, { type: 'CHOOSE_SPIRIT', cardId: null });
+        expect(gameReducer(s, { type: 'CHOOSE_SPIRIT', cardId: start.spiritOffer[0] })).toBe(s);
+    });
+
+    it('keeps the spirit when the first turn is restarted', () => {
+        const start = setupGame(4, 'A');
+        const chosen = gameReducer(start, { type: 'CHOOSE_SPIRIT', cardId: start.spiritOffer[1] });
+        const s = placeAllTokens(run(chosen, { type: 'TAKE_GROUP', index: 0 }));
+        const restarted = gameReducer(s, { type: 'RESTART_TURN' });
+        expect(restarted).toEqual(chosen);
+        expect(restarted.status).toBe('playing');
+    });
+});
+
+describe('spirit in hand', () => {
+    // ram: center MTN_3, one MTN_2 neighbor, cube on center
+    function withRam(): GameState {
+        const start = { ...setupGame(5, 'A'), spiritOffer: ['ram', 'owl'] };
+        const s = gameReducer(start, { type: 'CHOOSE_SPIRIT', cardId: 'ram' });
+        return withBoard(s, b => {
+            b[0].stack = ['GRAY', 'GRAY', 'GRAY'];
+            b[1].stack = ['GRAY', 'GRAY'];
+        });
+    }
+
+    it('counts in the 4-card hand limit', () => {
+        const s: GameState = {
+            ...withRam(),
+            hand: [{ cardId: 'ram', cubeIndex: 1 }, ...['bear', 'wolf', 'duck'].map(cardId => ({ cardId, cubeIndex: 1 }))],
+        };
+        expect(gameReducer(s, { type: 'TAKE_CARD', cardId: offered(s, 0) })).toBe(s);
+    });
+
+    it('leaves the hand once its cube is placed', () => {
+        const s = withRam();
+        expect(validCubeCells(s, 'ram')).toEqual(new Set(['0-0']));
+        const next = gameReducer(s, { type: 'PLACE_CUBE', cardId: 'ram', cellId: '0-0' });
+        expect(next.hand).toEqual([]);
+        expect(next.completed).toEqual([{ cardId: 'ram', cubeIndex: 0 }]);
+    });
+});
+
+describe('spirit score', () => {
+    function ramGame(): GameState {
+        const start = { ...setupGame(5, 'A'), spiritOffer: ['ram', 'owl'] };
+        return withBoard(gameReducer(start, { type: 'CHOOSE_SPIRIT', cardId: 'ram' }), b => {
+            b[0].stack = ['GRAY', 'GRAY', 'GRAY'];
+            b[1].stack = ['GRAY', 'GRAY'];
+        });
+    }
+
+    it('adds the spirit bonus once its cube is placed', () => {
+        const s = gameReducer(ramGame(), { type: 'PLACE_CUBE', cardId: 'ram', cellId: '0-0' });
+        const ram = ALL_SPIRIT_CARDS.find(c => c.id === 'ram')!;
+        const expected = ram.scoreBonus(buildGrid(s.face, s.board).flat());
+        expect(expected).toBeGreaterThan(0);
+        const score = scoreOf(s);
+        expect(score.spirit).toBe(expected);
+        expect(score.animals).toBe(0);
+    });
+
+    it('gives 0 when the spirit cube is not placed', () => {
+        expect(scoreOf(ramGame()).spirit).toBe(0);
+    });
+
+    it('gives 0 without a spirit, and leaves the animal score unchanged', () => {
+        const s = withBoard(newGame(5), b => {
+            b[0].stack = ['GRAY', 'GRAY', 'GRAY'];
+            b[1].stack = ['GRAY', 'GRAY'];
+        });
+        expect(scoreOf(s).spirit).toBe(0);
+        const withSpirit = gameReducer(ramGame(), { type: 'PLACE_CUBE', cardId: 'ram', cellId: '0-0' });
+        expect(scoreOf(withSpirit).animals).toBe(scoreOf(s).animals);
     });
 });

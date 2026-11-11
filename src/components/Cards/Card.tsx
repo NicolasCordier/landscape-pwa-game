@@ -2,6 +2,7 @@ import type { BaseCard } from '../../game/cards';
 import { TERRAIN_COLOR } from './colors';
 import { formatCardName as formatName } from './cardName';
 import { PatternPreview } from './PatternPreview';
+import { isSpirit } from './spiritText';
 
 interface CardProps {
     card:      BaseCard;
@@ -77,7 +78,7 @@ export function Card({ card, selected, onClick }: CardProps) {
                 gap:           4,
                 zIndex:        1,
             }}>
-                {card.points.map((p, i) => (
+                {!isSpirit(card) && card.points.map((p, i) => (
                     <div key={i} style={{
                         width:           26,
                         height:          26,

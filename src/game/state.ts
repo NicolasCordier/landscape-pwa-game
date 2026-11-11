@@ -1,5 +1,5 @@
 import { generateBoardType } from './board';
-import { ALL_ANIMAL_CARDS } from './cards';
+import { ALL_ANIMAL_CARDS, ALL_SPIRIT_CARDS, SpiritCard } from './cards';
 import type { BaseCard } from './cards';
 import type { BoardGrid, Cell, Token } from './cell';
 import { SOLO_CONFIG, seededRng, shuffle } from './config';
@@ -13,6 +13,11 @@ export interface CellState {
     stack:   Token[];
     hasCube: boolean;
 }
+
+// 'choosing-spirit': before turn 1, the player takes one of the offered spirits or none
+export type GameStatus = 'choosing-spirit' | 'playing' | 'over';
+
+export type Face = 'A' | 'B';
 
 export interface CardState {
     cardId:    string;
@@ -31,16 +36,19 @@ export interface TurnData {
     completed:         CardState[];        // finished cards
     cardActionThisTurn: boolean;
     turn:              number;
-    status:            'playing' | 'over';
+    status:            GameStatus;
 }
 
 export interface GameState extends TurnData {
-    face:      'A' | 'B';
-    turnStart: TurnData;
+    face:        Face;
+    spiritOffer: string[];      // spirits offered before turn 1, emptied once chosen
+    spirit:      string | null; // spirit taken (in hand or completed), null if none
+    turnStart:   TurnData;
 }
 
 export type GameAction =
-    | { type: 'NEW_GAME'; seed: number }
+    | { type: 'NEW_GAME'; seed: number; face: Face }
+    | { type: 'CHOOSE_SPIRIT'; cardId: string | null }
     | { type: 'TAKE_GROUP'; index: number }
     | { type: 'PLACE_TOKEN'; tokenIndex: number; cellId: string }
     | { type: 'TAKE_CARD'; cardId: string }
@@ -51,7 +59,7 @@ export type GameAction =
 
 // ─── State <-> engine objects ─────────────────────────────────────────────────
 
-export function buildGrid(face: 'A' | 'B', board: CellState[]): BoardGrid {
+export function buildGrid(face: Face, board: CellState[]): BoardGrid {
     const grid = generateBoardType(face);
     restoreBoard(grid, board);
     return grid;
@@ -74,7 +82,7 @@ export function cardTemplate(cardId: string): BaseCard {
 }
 
 function cubeCount(cardId: string): number {
-    const template = ALL_ANIMAL_CARDS.find(c => c.id === cardId);
+    const template = [...ALL_ANIMAL_CARDS, ...ALL_SPIRIT_CARDS].find(c => c.id === cardId);
     if (!template) {
         throw new Error(`Unknown card: ${cardId}`);
     }
@@ -153,12 +161,16 @@ export function validCubeCells(state: GameState, cardId: string): Set<string> {
 export function scoreOf(state: GameState): ScoreBreakdown {
     const cells = buildGrid(state.face, state.board).flat();
     const cards = [...state.hand, ...state.completed].map(buildCard);
-    return computeScoreBreakdown(cells, cards, state.face);
+    // The spirit bonus only counts once its cube is placed
+    const finishedSpirit = state.completed.find(c => c.cardId === state.spirit);
+    const spiritCard = finishedSpirit ? buildCard(finishedSpirit) : null;
+    const spiritBonusFn = spiritCard instanceof SpiritCard ? spiritCard.scoreBonus : undefined;
+    return computeScoreBreakdown(cells, cards, state.face, spiritBonusFn);
 }
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
-export function newGame(seed: number): GameState {
+export function newGame(seed: number, face: Face): GameState {
     const rng = seededRng(seed);
     const bagTokens = (Object.entries(SOLO_CONFIG.bag) as [Token, number][])
         .flatMap(([token, count]) => Array<Token>(count).fill(token));
@@ -172,8 +184,11 @@ export function newGame(seed: number): GameState {
     const deck = shuffle(ALL_ANIMAL_CARDS.map(c => c.id), rng);
     const cardOffer = deck.splice(0, SOLO_CONFIG.cardOffer);
 
+    // Drawn last, so the bag and deck shuffles stay the same for a given seed
+    const spiritOffer = shuffle(ALL_SPIRIT_CARDS.map(c => c.id), rng).slice(0, SOLO_CONFIG.spiritOffer);
+
     const turnData: TurnData = {
-        board:             boardFromGrid(generateBoardType(SOLO_CONFIG.face)),
+        board:             boardFromGrid(generateBoardType(face)),
         tokenOffer,
         tokenBag,
         tokensToPlace:     [],
@@ -183,9 +198,9 @@ export function newGame(seed: number): GameState {
         completed:         [],
         cardActionThisTurn: false,
         turn:              1,
-        status:            'playing',
+        status:            'choosing-spirit',
     };
-    return { ...turnData, face: SOLO_CONFIG.face, turnStart: turnData };
+    return { ...turnData, face, spiritOffer, spirit: null, turnStart: turnData };
 }
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
@@ -193,9 +208,12 @@ export function newGame(seed: number): GameState {
 // Invalid actions return the state unchanged
 export function gameReducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'NEW_GAME') {
-        return newGame(action.seed);
+        return newGame(action.seed, action.face);
     }
-    if (state.status === 'over') {
+    if (action.type === 'CHOOSE_SPIRIT') {
+        return chooseSpirit(state, action.cardId);
+    }
+    if (state.status !== 'playing') {
         return state;
     }
 
@@ -298,8 +316,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         }
 
         case 'RESTART_TURN':
-            return { ...state.turnStart, face: state.face, turnStart: state.turnStart };
+            return { ...state, ...state.turnStart };
     }
+}
+
+// The choice is final: the new turn snapshot is taken after it, so RESTART_TURN keeps it
+function chooseSpirit(state: GameState, cardId: string | null): GameState {
+    if (state.status !== 'choosing-spirit' || (cardId !== null && !state.spiritOffer.includes(cardId))) {
+        return state;
+    }
+    const next: GameState = {
+        ...state,
+        hand:        cardId === null ? state.hand : [...state.hand, { cardId, cubeIndex: cubeCount(cardId) }],
+        spiritOffer: [],
+        spirit:      cardId,
+        status:      'playing',
+    };
+    return { ...next, turnStart: snapshotOf(next) };
 }
 
 function findCell(grid: BoardGrid, cellId: string): Cell | undefined {

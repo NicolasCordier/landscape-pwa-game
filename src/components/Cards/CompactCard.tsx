@@ -2,6 +2,7 @@ import type { BaseCard } from '../../game/cards';
 import { TERRAIN_COLOR } from './colors';
 import { formatCardName } from './cardName';
 import { PatternPreview } from './PatternPreview';
+import { isSpirit } from './spiritText';
 
 interface CompactCardProps {
     card:      BaseCard;
@@ -28,19 +29,24 @@ export function CompactCard({ card, selected, disabled, onClick, onZoom }: Compa
         >
             <span className="compact-card-name">{formatCardName(card.id)}</span>
             <PatternPreview centerTerrain={card.centerTerrain} pattern={card.pattern} cubeAt={card.cubeAt} />
-            <div className="compact-card-points">
-                {ascending.map((p, i) => (
-                    <span
-                        key={i}
-                        className="compact-card-point"
-                        style={i < placed
-                            ? { backgroundColor: color, color: '#fff', borderColor: color }
-                            : { borderColor: color, color }}
-                    >
-                        {p}
-                    </span>
-                ))}
-            </div>
+            {isSpirit(card) ? (
+                // A spirit scores a bonus instead of point steps
+                <span className="compact-card-spirit" style={{ borderColor: color, color }}>Esprit</span>
+            ) : (
+                <div className="compact-card-points">
+                    {ascending.map((p, i) => (
+                        <span
+                            key={i}
+                            className="compact-card-point"
+                            style={i < placed
+                                ? { backgroundColor: color, color: '#fff', borderColor: color }
+                                : { borderColor: color, color }}
+                        >
+                            {p}
+                        </span>
+                    ))}
+                </div>
+            )}
             {onZoom && (
                 <button
                     type="button"

@@ -2,7 +2,6 @@ import type { Token } from './cell';
 
 // Solo rules, gathered here so they can be tuned without touching the engine.
 export const SOLO_CONFIG = {
-    face: 'A' as 'A' | 'B',
     // Provisional bag composition (120 tokens), to rebalance for Landscape's own cards
     bag: {
         BLUE:   23,
@@ -15,7 +14,8 @@ export const SOLO_CONFIG = {
     tokenGroups:   3, // groups in the central offer
     groupSize:     3, // tokens per group
     cardOffer:     3, // face-up animal cards
-    maxHand:       4, // unfinished cards in hand
+    spiritOffer:   2, // spirits offered before turn 1
+    maxHand:       4, // unfinished cards in hand, spirit included
     endEmptyCells: 2, // game ends when the board has this many empty cells or fewer
 };
 
