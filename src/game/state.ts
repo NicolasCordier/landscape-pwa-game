@@ -29,7 +29,7 @@ export interface TurnData {
     cardOffer:         string[];
     hand:              CardState[];        // unfinished cards
     completed:         CardState[];        // finished cards
-    cardTakenThisTurn: boolean;
+    cardActionThisTurn: boolean;
     turn:              number;
     status:            'playing' | 'over';
 }
@@ -44,6 +44,7 @@ export type GameAction =
     | { type: 'TAKE_GROUP'; index: number }
     | { type: 'PLACE_TOKEN'; tokenIndex: number; cellId: string }
     | { type: 'TAKE_CARD'; cardId: string }
+    | { type: 'DISCARD_CARD'; cardId: string }
     | { type: 'PLACE_CUBE'; cardId: string; cellId: string }
     | { type: 'END_TURN' }
     | { type: 'RESTART_TURN' };
@@ -91,9 +92,9 @@ function snapshotOf(state: GameState): TurnData {
         cardOffer:         state.cardOffer,
         hand:              state.hand,
         completed:         state.completed,
-        cardTakenThisTurn: state.cardTakenThisTurn,
-        turn:              state.turn,
-        status:            state.status,
+        cardActionThisTurn: state.cardActionThisTurn,
+        turn:               state.turn,
+        status:             state.status,
     };
 }
 
@@ -107,10 +108,23 @@ export function canEndTurn(state: GameState): boolean {
     return state.status === 'playing' && hasTakenGroup(state) && state.tokensToPlace.length === 0;
 }
 
+// One card action per turn: take a card OR discard one from the offer
+export function canDiscardCard(state: GameState): boolean {
+    return state.status === 'playing' && !state.cardActionThisTurn;
+}
+
 export function canTakeCard(state: GameState): boolean {
-    return state.status === 'playing'
-        && !state.cardTakenThisTurn
-        && state.hand.length < SOLO_CONFIG.maxHand;
+    return canDiscardCard(state) && state.hand.length < SOLO_CONFIG.maxHand;
+}
+
+// Removes a card from the offer and refills it from the deck
+function withoutOfferCard(state: GameState, cardId: string): Pick<GameState, 'cardOffer' | 'cardDeck'> {
+    const [refill, ...cardDeck] = state.cardDeck;
+    const cardOffer = state.cardOffer.filter(id => id !== cardId);
+    if (refill !== undefined) {
+        cardOffer.push(refill);
+    }
+    return { cardOffer, cardDeck };
 }
 
 export function emptyCellCount(state: GameState): number {
@@ -164,7 +178,7 @@ export function newGame(seed: number): GameState {
         cardOffer,
         hand:              [],
         completed:         [],
-        cardTakenThisTurn: false,
+        cardActionThisTurn: false,
         turn:              1,
         status:            'playing',
     };
@@ -214,17 +228,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             if (!canTakeCard(state) || !state.cardOffer.includes(action.cardId)) {
                 return state;
             }
-            const [refill, ...cardDeck] = state.cardDeck;
-            const cardOffer = state.cardOffer.filter(id => id !== action.cardId);
-            if (refill !== undefined) {
-                cardOffer.push(refill);
-            }
             return {
                 ...state,
-                cardOffer,
-                cardDeck,
-                hand:              [...state.hand, { cardId: action.cardId, cubeIndex: cubeCount(action.cardId) }],
-                cardTakenThisTurn: true,
+                ...withoutOfferCard(state, action.cardId),
+                hand:               [...state.hand, { cardId: action.cardId, cubeIndex: cubeCount(action.cardId) }],
+                cardActionThisTurn: true,
+            };
+        }
+
+        case 'DISCARD_CARD': {
+            if (!canDiscardCard(state) || !state.cardOffer.includes(action.cardId)) {
+                return state;
+            }
+            // The discarded card leaves the game
+            return {
+                ...state,
+                ...withoutOfferCard(state, action.cardId),
+                cardActionThisTurn: true,
             };
         }
 
@@ -267,7 +287,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 ...state,
                 tokenOffer,
                 tokenBag,
-                cardTakenThisTurn: false,
+                cardActionThisTurn: false,
                 turn:              state.turn + 1,
             };
             return { ...next, turnStart: snapshotOf(next) };

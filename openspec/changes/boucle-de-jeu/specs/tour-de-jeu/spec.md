@@ -59,6 +59,22 @@ Le système SHALL permettre au joueur de prendre au plus une carte de l'offre pa
 - **WHEN** le joueur a déjà pris une carte ce tour
 - **THEN** il ne peut pas en prendre une autre avant le tour suivant
 
+### Requirement: Défausse d'une carte de l'offre
+Au lieu de prendre une carte, le joueur SHALL pouvoir défausser une carte de l'offre. Prendre et défausser forment une seule action de carte : une seule des deux est possible par tour. La carte défaussée quitte la partie et l'offre MUST être aussitôt complétée depuis la pioche tant que celle-ci n'est pas vide. La défausse reste possible quand la main est pleine.
+
+#### Scenario: Défausser une carte
+- **WHEN** le joueur n'a ni pris ni défaussé de carte ce tour et défausse une carte de l'offre
+- **THEN** la carte disparaît de l'offre sans entrer dans sa main
+- **AND** l'offre est complétée par la première carte de la pioche si elle en contient
+
+#### Scenario: Défausse avec la main pleine
+- **WHEN** le joueur a 4 cartes non terminées en main et n'a pas encore fait d'action de carte ce tour
+- **THEN** il peut défausser une carte de l'offre
+
+#### Scenario: Une seule action de carte par tour
+- **WHEN** le joueur a déjà pris ou défaussé une carte ce tour
+- **THEN** il ne peut ni prendre ni défausser de carte avant le tour suivant
+
 ### Requirement: Pose d'un cube
 Pendant son tour, le joueur MAY poser autant de cubes qu'il le peut. Pour poser un cube d'une carte de sa main, le motif de la carte MUST être présent sur le plateau, dans l'une des 6 rotations, et la case désignée pour le cube MUST ne pas déjà porter de cube.
 

@@ -37,9 +37,14 @@
 
 - [x] 5.1 Afficher l'écran de score (détail par catégorie, total, plateau final) quand `status` vaut `'over'`, avec un bouton « Rejouer » ; vérifier dans le navigateur, sur une partie de test proche de la fin, l'affichage puis le redémarrage
 
-## 6. Vérification d'ensemble
+## 6. Défausse d'une carte de l'offre
 
-- [ ] 6.1 Jouer une partie complète sur un téléphone Android (`npm run dev -- --host`, même Wi-Fi), en tournant l'écran pendant la partie ; noter les problèmes d'UX constatés pour les prochaines étapes
+- [x] 6.1 Implémenter `DISCARD_CARD` (action de carte partagée avec `TAKE_CARD`, une par tour, possible main pleine, recharge de l'offre) ; vérifier par des tests les scénarios « Défausser une carte », « Défausse avec la main pleine » et « Une seule action de carte par tour »
+- [x] 6.2 Ajouter le bouton « Défausser cette carte » dans la vue agrandie d'une carte de l'offre ; vérifier dans le navigateur qu'une carte défaussée quitte l'offre sans entrer en main, puis que prendre une carte n'est plus possible ce tour
+
+## 7. Vérification d'ensemble
+
+- [ ] 7.1 Jouer une partie complète sur un téléphone Android (`npm run dev -- --host`, même Wi-Fi), en tournant l'écran pendant la partie ; noter les problèmes d'UX constatés pour les prochaines étapes
 
 ## Workflow follow-up
 

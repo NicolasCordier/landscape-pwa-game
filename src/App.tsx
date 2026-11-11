@@ -2,6 +2,7 @@ import { useMemo, useReducer, useState } from 'react';
 import './App.css';
 import PWABadge from './PWABadge.tsx';
 import { CardZoom } from './components/Cards/CardZoom.tsx';
+import type { CardZoomAction } from './components/Cards/CardZoom.tsx';
 import { PlayerHand } from './components/Cards/PlayerHand.tsx';
 import { SelectableCards } from './components/Cards/SelectableCards.tsx';
 import { ScoreScreen } from './components/Game/ScoreScreen.tsx';
@@ -12,7 +13,7 @@ import type { BaseCard } from './game/cards.ts';
 import type { Cell } from './game/cell.ts';
 import { SOLO_CONFIG } from './game/config.ts';
 import {
-    buildCard, buildGrid, canEndTurn, canTakeCard, cardTemplate, gameReducer, hasTakenGroup,
+    buildCard, buildGrid, canDiscardCard, canEndTurn, canTakeCard, cardTemplate, gameReducer, hasTakenGroup,
     newGame, scoreOf, validCubeCells, validTokenCells,
 } from './game/state.ts';
 
@@ -81,6 +82,11 @@ function App() {
         setZoom(null);
     }
 
+    function handleDiscardCard(card: BaseCard) {
+        act({ type: 'DISCARD_CARD', cardId: card.id });
+        setZoom(null);
+    }
+
     function handleRestart() {
         act({ type: 'RESTART_TURN' });
         setSelection(null);
@@ -113,8 +119,10 @@ function App() {
         instruction = 'Choisis un groupe de jetons';
     } else if (remaining > 0) {
         instruction = `Pose tes jetons : ${remaining} restant${remaining > 1 ? 's' : ''}`;
+    } else if (canDiscardCard(state)) {
+        instruction = 'Prends ou défausse une carte, pose des cubes ou termine ton tour';
     } else {
-        instruction = 'Prends une carte, pose des cubes ou termine ton tour';
+        instruction = 'Pose des cubes ou termine ton tour';
     }
     if (activeSelection && highlighted.size === 0) {
         instruction = activeSelection.kind === 'token'
@@ -122,9 +130,23 @@ function App() {
             : 'Aucune case ne permet de poser un cube pour cette carte';
     }
 
-    const takeCardNote = !canTakeCard(state)
-        ? (state.cardTakenThisTurn ? 'Tu as déjà pris une carte ce tour.' : `Ta main est pleine (${SOLO_CONFIG.maxHand} cartes).`)
-        : undefined;
+    let offerNote: string | undefined;
+    if (state.cardActionThisTurn) {
+        offerNote = 'Tu as déjà pris ou défaussé une carte ce tour.';
+    } else if (!canTakeCard(state)) {
+        offerNote = `Ta main est pleine (${SOLO_CONFIG.maxHand} cartes) : tu peux seulement défausser.`;
+    }
+
+    const offerActions: CardZoomAction[] = [];
+    if (zoom?.from === 'offer') {
+        const card = zoom.card;
+        if (canTakeCard(state)) {
+            offerActions.push({ label: 'Prendre cette carte', primary: true, onClick: () => handleTakeCard(card) });
+        }
+        if (canDiscardCard(state)) {
+            offerActions.push({ label: 'Défausser cette carte', onClick: () => handleDiscardCard(card) });
+        }
+    }
 
     return (
         <>
@@ -170,9 +192,8 @@ function App() {
                 <CardZoom
                     card={zoom.card}
                     onClose={() => setZoom(null)}
-                    actionLabel={zoom.from === 'offer' ? 'Prendre cette carte' : undefined}
-                    onAction={zoom.from === 'offer' && canTakeCard(state) ? () => handleTakeCard(zoom.card) : undefined}
-                    note={zoom.from === 'offer' ? takeCardNote : undefined}
+                    actions={offerActions}
+                    note={zoom.from === 'offer' ? offerNote : undefined}
                 />
             )}
             <PWABadge />

@@ -42,13 +42,13 @@ GameState
   cardOffer      string[]              jusqu'à 3 ids
   hand           SerializedCard[]      cartes non terminées (max 4)
   completed      SerializedCard[]      cartes terminées
-  cardTakenThisTurn  boolean
+  cardActionThisTurn  boolean
   turn           number
   turnStart      TurnSnapshot          état du début du tour
   status         'playing' | 'over'
 ```
 
-Le reducer traite des actions métier : `TAKE_GROUP`, `PLACE_TOKEN {tokenIdx, cellIdx}`, `TAKE_CARD {cardId}`, `PLACE_CUBE {cardId, cellIdx}`, `END_TURN`, `RESTART_TURN`, `NEW_GAME {seed?}`. La sélection en cours (jeton ou carte sélectionnés) est un état d'interface, gardé hors du reducer dans un `useState`.
+Le reducer traite des actions métier : `TAKE_GROUP`, `PLACE_TOKEN {tokenIdx, cellIdx}`, `TAKE_CARD {cardId}`, `DISCARD_CARD {cardId}`, `PLACE_CUBE {cardId, cellIdx}`, `END_TURN`, `RESTART_TURN`, `NEW_GAME {seed?}`. La sélection en cours (jeton ou carte sélectionnés) est un état d'interface, gardé hors du reducer dans un `useState`.
 
 Pour valider une action ou calculer des surbrillances, le reducer et l'UI reconstruisent la vue objet (grille de `Cell` reliées, cartes) à partir du `GameState`, puis appellent le moteur existant. L'UI le fait dans un `useMemo` sur `state.board`.
 
@@ -74,7 +74,7 @@ Ces choix proviennent de l'exploration et sont décrits dans les specs. Les cons
 
 - Sac de 120 jetons. Composition initiale : bleu 23, gris 23, marron 21, vert 19, jaune 19, rouge 15. À rééquilibrer plus tard pour le jeu propre à Landscape.
 - Offre de 3 groupes ; seul l'emplacement pris est rechargé en fin de tour.
-- Offre de 3 cartes ; au plus 1 carte prise par tour ; 4 cartes non terminées au maximum en main.
+- Offre de 3 cartes ; une seule action de carte par tour : prendre une carte (4 cartes non terminées au maximum en main) ou défausser une carte de l'offre.
 - Fin de partie : 2 cases vides ou moins, ou moins de 3 jetons dans le sac, vérifié en fin de tour.
 - Une case avec cube refuse les jetons : vérifié dans `Cell.canStack`.
 - Pas d'ordre imposé entre jetons, carte et cubes dans un tour : seule la pose des 3 jetons est obligatoire avant de terminer.

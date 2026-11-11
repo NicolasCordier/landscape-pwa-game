@@ -56,6 +56,16 @@ describe('NEW_GAME', () => {
         expect(s.tokenBag).toHaveLength(111);
         expect(s.turn).toBe(1);
     });
+
+    it('uses the official bag composition (offer + bag)', () => {
+        const s = newGame(11);
+        const all = [...s.tokenOffer.flatMap(g => g ?? []), ...s.tokenBag];
+        const count = (t: string) => all.filter(x => x === t).length;
+        expect({
+            BLUE: count('BLUE'), GRAY: count('GRAY'), BROWN: count('BROWN'),
+            GREEN: count('GREEN'), YELLOW: count('YELLOW'), RED: count('RED'),
+        }).toEqual({ BLUE: 23, GRAY: 23, BROWN: 21, GREEN: 19, YELLOW: 19, RED: 15 });
+    });
 });
 
 describe('TAKE_GROUP and PLACE_TOKEN', () => {
@@ -111,6 +121,38 @@ describe('TAKE_CARD', () => {
     it('refuses a second card in the same turn', () => {
         const s = run(newGame(3), { type: 'TAKE_CARD', cardId: newGame(3).cardOffer[0] });
         expect(gameReducer(s, { type: 'TAKE_CARD', cardId: s.cardOffer[0] })).toBe(s);
+    });
+});
+
+describe('DISCARD_CARD', () => {
+    it('removes the card from the offer without adding it to the hand', () => {
+        const s = newGame(3);
+        const [discarded] = s.cardOffer;
+        const next = gameReducer(s, { type: 'DISCARD_CARD', cardId: discarded });
+        expect(next.hand).toEqual([]);
+        expect(next.cardOffer).toHaveLength(3);
+        expect(next.cardOffer).not.toContain(discarded);
+        expect(next.cardOffer).toContain(s.cardDeck[0]);
+        expect(next.cardDeck).not.toContain(discarded);
+    });
+
+    it('is allowed when the hand is full', () => {
+        const s: GameState = {
+            ...newGame(3),
+            hand: ['bear', 'wolf', 'duck', 'frog'].map(cardId => ({ cardId, cubeIndex: 1 })),
+        };
+        const next = gameReducer(s, { type: 'DISCARD_CARD', cardId: s.cardOffer[0] });
+        expect(next.cardOffer).not.toContain(s.cardOffer[0]);
+    });
+
+    it('shares the single card action of the turn with TAKE_CARD', () => {
+        const start = newGame(3);
+        const afterDiscard = gameReducer(start, { type: 'DISCARD_CARD', cardId: start.cardOffer[0] });
+        expect(gameReducer(afterDiscard, { type: 'TAKE_CARD', cardId: afterDiscard.cardOffer[0] })).toBe(afterDiscard);
+        expect(gameReducer(afterDiscard, { type: 'DISCARD_CARD', cardId: afterDiscard.cardOffer[0] })).toBe(afterDiscard);
+
+        const afterTake = gameReducer(start, { type: 'TAKE_CARD', cardId: start.cardOffer[0] });
+        expect(gameReducer(afterTake, { type: 'DISCARD_CARD', cardId: afterTake.cardOffer[0] })).toBe(afterTake);
     });
 });
 
