@@ -39,12 +39,12 @@ function PWABadge() {
                     <div className="PWABadge-toast">
                         <div className="PWABadge-message">
                             {offlineReady
-                                ? <span id="toast-message">App ready to work offline</span>
-                                : <span id="toast-message">New content available, click on reload button to update.</span>}
+                                ? <span id="toast-message">Le jeu est prêt à fonctionner hors ligne.</span>
+                                : <span id="toast-message">Une nouvelle version est disponible.</span>}
                         </div>
                         <div className="PWABadge-buttons">
-                            {needRefresh && <button className="PWABadge-toast-button" onClick={() => updateServiceWorker(true)}>Reload</button>}
-                            <button className="PWABadge-toast-button" onClick={() => close()}>Close</button>
+                            {needRefresh && <button className="PWABadge-toast-button" onClick={() => updateServiceWorker(true)}>Recharger</button>}
+                            <button className="PWABadge-toast-button" onClick={() => close()}>Fermer</button>
                         </div>
                     </div>
                 )}

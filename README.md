@@ -1,73 +1,49 @@
-# React + TypeScript + Vite
+# Landscape
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Jeu solo de pose de jetons sur un plateau hexagonal, pensé pour le téléphone (PWA, en vertical comme en horizontal).
 
-Currently, two official plugins are available:
+**Jouer :** https://nicolascordier.github.io/landscape-pwa-game/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Sur Android, ouvrir l'adresse dans Chrome puis « Installer l'application » : le jeu se lance depuis l'écran d'accueil et fonctionne hors ligne après une première visite. Quand une nouvelle version est publiée, une invite propose de recharger.
 
-## React Compiler
+## Développement
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Le jeu est servi sur http://localhost:5173/.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Pour tester sur un téléphone du même Wi-Fi :
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev -- --host
 ```
+
+puis ouvrir l'adresse « Network » affichée (par exemple `http://192.168.1.10:5173/`). En HTTP sur le réseau local, le navigateur désactive le service worker : l'installation et le mode hors ligne ne se testent que sur le site publié, ou en local avec la prévisualisation ci-dessous.
+
+## Vérifications
+
+```bash
+npm test         # tests du moteur de jeu (Vitest)
+npm run lint     # ESLint
+npm run build    # vérification des types et build de production dans dist/
+npm run preview  # sert dist/ sur http://localhost:4173/landscape-pwa-game/
+```
+
+## Publication
+
+Chaque push sur `main` lance le workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) : tests, lint, build, puis publication sur GitHub Pages. Si une étape échoue, rien n'est publié et la version en ligne reste inchangée. Le workflow peut aussi être lancé à la main depuis l'onglet *Actions*.
+
+Réglage à faire une fois dans le dépôt GitHub : *Settings > Pages > Source* : **GitHub Actions**.
+
+Le site est servi sous `/landscape-pwa-game/` : ce chemin est appliqué au build et à la prévisualisation seulement (voir `vite.config.ts`), le serveur de développement reste à la racine.
+
+## Données locales
+
+Le dernier réglage (et, plus tard, la partie en cours et le classement) est enregistré dans le navigateur de l'appareil. Chaque adresse a ses propres données : le site publié et le serveur de développement ne les partagent pas.
+
+## Organisation du travail
+
+Les évolutions sont décrites avec [OpenSpec](https://github.com/Fission-AI/OpenSpec) dans `openspec/changes/`, développées sur une branche par change, puis mergées dans `main`.

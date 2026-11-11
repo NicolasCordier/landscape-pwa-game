@@ -2,8 +2,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// GitHub Pages serves the project under /<repo>/; the dev server stays at the root
+const PAGES_BASE = '/landscape-pwa-game/';
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command, isPreview }) => ({
+    base: command === 'build' || isPreview ? PAGES_BASE : '/',
     plugins: [react(), VitePWA({
         registerType: 'prompt',
         injectRegister: false,
@@ -16,7 +20,8 @@ export default defineConfig({
         manifest: {
             name: 'Landscape',
             short_name: 'Landscape',
-            description: 'Solo tile-placement game inspired by Harmonies',
+            lang: 'fr',
+            description: 'Jeu solo de pose de jetons sur un plateau hexagonal',
             theme_color: '#7a9e6e',
         },
 
@@ -33,4 +38,4 @@ export default defineConfig({
             type: 'module',
         },
     })],
-})
+}))
