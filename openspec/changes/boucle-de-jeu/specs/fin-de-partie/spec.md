@@ -14,11 +14,11 @@ Définit quand une partie solo s'arrête et comment le score final, détaillé p
 - **THEN** la partie est terminée et l'écran de score s'affiche
 
 #### Scenario: Sac épuisé
-- **WHEN** le joueur termine un tour et que le sac contient moins de 3 jetons
+- **WHEN** le joueur termine un tour et que le sac contient moins de 9 jetons
 - **THEN** la partie est terminée et l'écran de score s'affiche
 
 #### Scenario: Partie qui continue
-- **WHEN** le joueur termine un tour, qu'il reste plus de 2 cases vides et que le sac contient au moins 3 jetons
+- **WHEN** le joueur termine un tour, qu'il reste plus de 2 cases vides et que le sac contient au moins 9 jetons
 - **THEN** un nouveau tour commence
 
 ### Requirement: Score détaillé

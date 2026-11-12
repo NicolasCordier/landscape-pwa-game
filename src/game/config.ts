@@ -11,7 +11,7 @@ export const SOLO_CONFIG = {
         YELLOW: 19,
         RED:    15,
     } satisfies Record<Token, number>,
-    tokenGroups:   3, // groups in the central offer
+    tokenGroups:   3, // groups in the central offer, all redrawn at the end of each turn
     groupSize:     3, // tokens per group
     cardOffer:     3, // face-up animal cards
     spiritOffer:   2, // spirits offered before turn 1

@@ -232,16 +232,18 @@ describe('END_TURN', () => {
         expect(gameReducer(newGame(1), { type: 'END_TURN' }).turn).toBe(1);
     });
 
-    it('refills only the taken slot', () => {
+    it('discards the groups not taken and redraws the whole offer', () => {
         const start = newGame(1);
         const s = placeAllTokens(run(start, { type: 'TAKE_GROUP', index: 1 }));
         const next = gameReducer(s, { type: 'END_TURN' });
         expect(next.turn).toBe(2);
         expect(next.status).toBe('playing');
-        expect(next.tokenOffer[0]).toEqual(start.tokenOffer[0]);
-        expect(next.tokenOffer[2]).toEqual(start.tokenOffer[2]);
-        expect(next.tokenOffer[1]).toEqual(start.tokenBag.slice(0, 3));
-        expect(next.tokenBag).toHaveLength(108);
+        expect(next.tokenOffer).toEqual([
+            start.tokenBag.slice(0, 3),
+            start.tokenBag.slice(3, 6),
+            start.tokenBag.slice(6, 9),
+        ]);
+        expect(next.tokenBag).toEqual(start.tokenBag.slice(9));
         expect(next.turnStart.turn).toBe(2);
     });
 
@@ -252,10 +254,12 @@ describe('END_TURN', () => {
         expect(gameReducer(s, { type: 'END_TURN' }).status).toBe('over');
     });
 
-    it('ends the game when the bag holds fewer than 3 tokens', () => {
+    it('ends the game when the bag cannot refill the whole offer', () => {
         let s = run(newGame(1), { type: 'TAKE_GROUP', index: 0 });
-        s = placeAllTokens({ ...s, tokenBag: ['RED', 'RED'] });
-        expect(gameReducer(s, { type: 'END_TURN' }).status).toBe('over');
+        s = placeAllTokens(s);
+        const eight = s.tokenBag.slice(0, 8);
+        expect(gameReducer({ ...s, tokenBag: eight }, { type: 'END_TURN' }).status).toBe('over');
+        expect(gameReducer({ ...s, tokenBag: s.tokenBag.slice(0, 9) }, { type: 'END_TURN' }).status).toBe('playing');
     });
 });
 

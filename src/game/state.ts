@@ -298,12 +298,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 return state;
             }
             const gameOver = emptyCellCount(state) <= SOLO_CONFIG.endEmptyCells
-                || state.tokenBag.length < SOLO_CONFIG.groupSize;
+                || state.tokenBag.length < SOLO_CONFIG.tokenGroups * SOLO_CONFIG.groupSize;
             if (gameOver) {
                 return { ...state, status: 'over' };
             }
+            // Groups not taken this turn are discarded: the whole offer is redrawn
             const tokenBag = [...state.tokenBag];
-            const tokenOffer = state.tokenOffer.map(g => g ?? tokenBag.splice(0, SOLO_CONFIG.groupSize));
+            const tokenOffer = state.tokenOffer.map(() => tokenBag.splice(0, SOLO_CONFIG.groupSize));
             const next: GameState = {
                 ...state,
                 ...refillCardOffer(state),

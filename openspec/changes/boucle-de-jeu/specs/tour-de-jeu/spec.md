@@ -93,12 +93,12 @@ Pendant son tour, le joueur MAY poser autant de cubes qu'il le peut. Pour poser 
 - **AND** elle ne compte plus dans la limite de 4 cartes en main
 
 ### Requirement: Fin du tour
-Le joueur SHALL pouvoir terminer son tour uniquement après avoir posé les 3 jetons du groupe choisi. À la fin du tour, l'emplacement du groupe pris est rechargé avec 3 jetons tirés du sac, l'offre de cartes est complétée jusqu'à 3 cartes depuis la pioche, et le compteur de tours augmente de 1.
+Le joueur SHALL pouvoir terminer son tour uniquement après avoir posé les 3 jetons du groupe choisi. À la fin du tour, les deux groupes non choisis sont défaussés (ils sortent du jeu) et l'offre centrale est entièrement renouvelée avec 3 groupes de 3 jetons tirés du sac, l'offre de cartes est complétée jusqu'à 3 cartes depuis la pioche, et le compteur de tours augmente de 1.
 
 #### Scenario: Terminer le tour
 - **WHEN** le joueur a posé ses 3 jetons et termine son tour
-- **THEN** l'emplacement vide de l'offre centrale reçoit 3 nouveaux jetons tirés du sac
-- **AND** les deux autres groupes restent en place
+- **THEN** les deux groupes non choisis sont défaussés
+- **AND** l'offre centrale reçoit 3 nouveaux groupes de 3 jetons tirés du sac
 - **AND** le tour suivant commence
 
 #### Scenario: Recharge de l'offre de cartes
