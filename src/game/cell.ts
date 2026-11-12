@@ -27,7 +27,8 @@ export class Cell {
         }
         if (this.top() === 'GREEN')  { return `TREE_${this.height()}` as Terrain; }
         if (this.top() === 'GRAY')   { return `MTN_${this.height()}` as Terrain; }
-        if (this.top() === 'RED')    { return 'CITY'; }
+        // A house is complete only with two levels (RED on BROWN, GRAY or RED)
+        if (this.top() === 'RED')    { return this.height() === 2 ? 'CITY' : null; }
         if (this.top() === 'YELLOW') { return 'FIELD'; }
         if (this.top() === 'BLUE')   { return 'RIVER'; }
         return null; // BROWN alone is not a finished terrain

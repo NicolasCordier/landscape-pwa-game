@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateBoard } from './board';
-import { ALL_ANIMAL_CARDS, AnimalCard } from './cards';
+import { ALL_ANIMAL_CARDS, ALL_SPIRIT_CARDS, AnimalCard, SpiritCard } from './cards';
 import type { Token } from './cell';
 import { computeScoreBreakdown } from './scoring';
 
@@ -35,6 +35,37 @@ describe('cube on a neighbor (cubeAt "0")', () => {
             expect(placement!.cubeCell.id).toBe(center.neighbors[cubeSlot]!.id);
         });
     }
+});
+
+describe('houses', () => {
+    it('counts a house only once it has two levels', () => {
+        const cell = generateBoard(5, 5)[0][0];
+        cell.stack = ['RED'];
+        expect(cell.detectTerrain()).toBeNull();
+        cell.stack = ['BROWN', 'RED'];
+        expect(cell.detectTerrain()).toBe('CITY');
+    });
+
+    // phoenix: center CITY, pattern[0] = CITY (cube), pattern[3] = FIELD
+    const template = ALL_SPIRIT_CARDS.find(c => c.id === 'phoenix')!;
+    const setup = (cubeHouse: Token[]) => {
+        const card = new SpiritCard(template.id, template.centerTerrain, template.pattern, template.cubeAt, template.scoreBonus);
+        const center = generateBoard(5, 5)[1][1];
+        center.stack = ['BROWN', 'RED'];
+        center.neighbors[0]!.stack = cubeHouse;
+        center.neighbors[3]!.stack = ['YELLOW'];
+        return { card, center };
+    };
+
+    it('refuses the phoenix cube on a one-level house', () => {
+        const { card, center } = setup(['RED']);
+        expect(card.canPlace(center)).toBeNull();
+    });
+
+    it('accepts the phoenix cube on a complete house', () => {
+        const { card, center } = setup(['GRAY', 'RED']);
+        expect(card.canPlace(center)?.cubeCell.id).toBe(center.neighbors[0]!.id);
+    });
 });
 
 describe('stacking', () => {
