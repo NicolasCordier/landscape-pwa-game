@@ -19,27 +19,11 @@ interface SerializedCell {
     hasCube: boolean;
 }
 
-export interface GameRecord {
-    id: string;
-    date: string;
-    score: number;
-    face: 'A' | 'B';
-    scoreBreakdown: {
-        trees: number;
-        mountains: number;
-        fields: number;
-        buildings: number;
-        river: number;
-        animals: number;
-        spirit: number;
-    };
-}
-
 // ─── Storage keys ─────────────────────────────────────────────────────────────
 
+// The game history has its own key and module (history.ts)
 const STORAGE_KEYS = {
     currentGame: 'landscape_current_game',
-    history:     'landscape_history',
 } as const;
 
 // ─── Board serialization ──────────────────────────────────────────────────────
@@ -112,9 +96,9 @@ export function deserializeCard(saved: SerializedCard): BaseCard | null {
 // Version 1 was an older format that was never written.
 export const SAVE_VERSION = 2;
 
-type KeyValueStore = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+export type KeyValueStore = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
-function defaultStore(): KeyValueStore | undefined {
+export function defaultStore(): KeyValueStore | undefined {
     try {
         return globalThis.localStorage;
     } catch {
@@ -125,11 +109,11 @@ function defaultStore(): KeyValueStore | undefined {
 const KNOWN_CARD_IDS = new Set([...ALL_ANIMAL_CARDS, ...ALL_SPIRIT_CARDS].map(c => c.id));
 const TOKENS = new Set<unknown>(['GREEN', 'GRAY', 'BROWN', 'YELLOW', 'BLUE', 'RED'] satisfies Token[]);
 
-function isObject(value: unknown): value is Record<string, unknown> {
+export function isObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function isArrayOf<T>(value: unknown, check: (item: unknown) => item is T): value is T[] {
+export function isArrayOf<T>(value: unknown, check: (item: unknown) => item is T): value is T[] {
     return Array.isArray(value) && value.every(check);
 }
 
@@ -139,7 +123,7 @@ const isTokenGroup = (v: unknown): v is Token[] | null => v === null || isArrayO
 const isOfferSlot = (v: unknown): v is string | null => v === null || isCardId(v);
 const isCardState = (v: unknown): v is SerializedCard =>
     isObject(v) && isCardId(v.cardId) && typeof v.cubeIndex === 'number';
-const isCell = (v: unknown): v is SerializedCell =>
+export const isCell = (v: unknown): v is SerializedCell =>
     isObject(v) && isArrayOf(v.stack, isToken) && typeof v.hasCube === 'boolean';
 
 // Structural check of the data a turn can change
@@ -174,8 +158,14 @@ export function parseSavedGame(raw: string): GameState | null {
         const valid = isTurnData(state, cellCount)
             && isTurnData(state.turnStart, cellCount)
             && isArrayOf(state.spiritOffer, isCardId)
-            && (state.spirit === null || isCardId(state.spirit));
-        return valid ? state as unknown as GameState : null;
+            && (state.spirit === null || isCardId(state.spirit))
+            && (state.id === undefined || typeof state.id === 'string');
+        if (!valid) {
+            return null;
+        }
+        // Games saved before ids existed get one, so they are still recorded when they end
+        const id = state.id ?? `saved-${Date.now().toString(36)}`;
+        return { ...state, id } as unknown as GameState;
     } catch {
         return null;
     }
@@ -212,25 +202,5 @@ export function clearCurrentGame(store: KeyValueStore | undefined = defaultStore
         store?.removeItem(STORAGE_KEYS.currentGame);
     } catch {
         // Nothing else to do: a save that cannot be removed cannot be read either
-    }
-}
-
-// ─── History ──────────────────────────────────────────────────────────────────
-
-export function saveGameRecord(record: GameRecord): void {
-    const history = loadHistory();
-    history.push(record);
-    localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history));
-}
-
-export function loadHistory(): GameRecord[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.history);
-    if (raw === null) {
-        return [];
-    }
-    try {
-        return JSON.parse(raw) as GameRecord[];
-    } catch {
-        return [];
     }
 }

@@ -42,7 +42,12 @@ Le site est servi sous `/landscape-pwa-game/` : ce chemin est appliqué au build
 
 ## Données locales
 
-Le dernier réglage et la partie en cours (et, plus tard, le classement) sont enregistrés dans le navigateur de l'appareil. La partie en cours est sauvegardée après chaque action, ce qui permet de fermer l'application et de la reprendre depuis l'accueil. Elle est effacée quand la partie se termine. Une sauvegarde d'un format plus ancien est ignorée après une mise à jour. Si le navigateur refuse le stockage (navigation privée, par exemple), on joue normalement, mais la partie est perdue à la fermeture.
+Le dernier réglage, la partie en cours et l'historique des parties terminées sont enregistrés dans le navigateur de l'appareil.
+
+- **Partie en cours** : sauvegardée après chaque action, ce qui permet de fermer l'application et de la reprendre depuis l'accueil. Elle est effacée quand la partie se termine. Une sauvegarde d'un format plus ancien est ignorée après une mise à jour.
+- **Historique** : chaque partie terminée y est ajoutée, avec son score détaillé, son plateau final, ses cartes et son esprit. Il alimente l'écran « Scores » (classement par face et historique). Une partie abandonnée n'y figure pas. L'historique est conservé après une mise à jour.
+
+Si le navigateur refuse le stockage (navigation privée, par exemple), on joue normalement, mais la partie en cours et l'historique sont perdus à la fermeture. Effacer les données du site efface aussi l'historique.
 
 Chaque adresse a ses propres données : le site publié et le serveur de développement ne les partagent pas.
 

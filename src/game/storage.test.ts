@@ -54,6 +54,20 @@ describe('parseSavedGame', () => {
         }
     });
 
+    it('gives an id to a game saved before ids existed', () => {
+        const withoutId: Partial<GameState> = midTurn();
+        delete withoutId.id;
+        const parsed = parseSavedGame(raw(withoutId));
+        expect(parsed).not.toBeNull();
+        expect(typeof parsed!.id).toBe('string');
+        expect(parsed!.id).not.toBe('');
+        expect({ ...parsed, id: undefined }).toEqual({ ...withoutId, id: undefined });
+    });
+
+    it('rejects an id that is not a string', () => {
+        expect(parseSavedGame(raw({ ...midTurn(), id: 42 }))).toBeNull();
+    });
+
     it('rejects invalid JSON', () => {
         expect(parseSavedGame('{oops')).toBeNull();
         expect(parseSavedGame('null')).toBeNull();

@@ -7,6 +7,7 @@ import {
     buildCard, buildGrid, canDiscardCard, canEndTurn, canTakeCard, cardTemplate, hasTakenGroup,
     scoreOf, validCubeCells, validTokenCells,
 } from '../../game/state';
+import type { Placement } from '../../game/history';
 import type { GameAction, GameState } from '../../game/state';
 import { formatCardName } from '../Cards/cardName';
 import { CardZoom } from '../Cards/CardZoom';
@@ -28,13 +29,14 @@ type Selection =
 type Zoom = { card: BaseCard; from: 'offer' | 'hand' | 'spirit' } | null;
 
 interface GameScreenProps {
-    state:    GameState;
-    dispatch: Dispatch<GameAction>;
-    onReplay: () => void;
-    onHome:   () => void;
+    state:     GameState;
+    dispatch:  Dispatch<GameAction>;
+    placement: Placement | null; // where the finished game stands in the leaderboard
+    onReplay:  () => void;
+    onHome:    () => void;
 }
 
-export function GameScreen({ state, dispatch: act, onReplay, onHome }: GameScreenProps) {
+export function GameScreen({ state, dispatch: act, placement, onReplay, onHome }: GameScreenProps) {
     const [selection, setSelection] = useState<Selection>(null);
     const [zoom, setZoom] = useState<Zoom>(null);
 
@@ -102,6 +104,8 @@ export function GameScreen({ state, dispatch: act, onReplay, onHome }: GameScree
                 grid={grid}
                 score={scoreOf(state)}
                 turns={state.turn}
+                face={state.face}
+                placement={placement}
                 spiritName={state.spirit ? formatCardName(state.spirit) : undefined}
                 onReplay={onReplay}
                 onHome={onHome}

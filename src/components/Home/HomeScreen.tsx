@@ -8,11 +8,13 @@ export interface CurrentGame {
 }
 
 interface HomeScreenProps {
-    initialFace: Face;
-    current:     CurrentGame | null; // game in progress, if any
-    onStart:     (face: Face) => void;
-    onResume:    () => void;
-    onShowCards: () => void;
+    face:         Face; // preselected; only remembered on the device once a game starts
+    onFaceChange: (face: Face) => void;
+    current:      CurrentGame | null; // game in progress, if any
+    onStart:      (face: Face) => void;
+    onResume:     () => void;
+    onShowCards:  () => void;
+    onShowScores: () => void;
 }
 
 const FACES: { face: Face; label: string; detail: string }[] = [
@@ -20,10 +22,8 @@ const FACES: { face: Face; label: string; detail: string }[] = [
     { face: 'B', label: 'Face B', detail: '25 cases, rivière en îles' },
 ];
 
-// Entry point: resume the game in progress, or set up and start a new one.
-// History will be added here in the next step.
-export function HomeScreen({ initialFace, current, onStart, onResume, onShowCards }: HomeScreenProps) {
-    const [face, setFace] = useState<Face>(initialFace);
+// Entry point: resume the game in progress, set up and start a new one, or see the scores
+export function HomeScreen({ face, onFaceChange, current, onStart, onResume, onShowCards, onShowScores }: HomeScreenProps) {
     const [confirming, setConfirming] = useState(false);
 
     // Starting a game replaces the one in progress: ask first
@@ -55,7 +55,7 @@ export function HomeScreen({ initialFace, current, onStart, onResume, onShowCard
                             type="button"
                             className={`face-button${option.face === face ? ' selected' : ''}`}
                             aria-pressed={option.face === face}
-                            onClick={() => setFace(option.face)}
+                            onClick={() => onFaceChange(option.face)}
                         >
                             <span className="face-label">{option.label}</span>
                             <span className="face-detail">{option.detail}</span>
@@ -68,9 +68,14 @@ export function HomeScreen({ initialFace, current, onStart, onResume, onShowCard
                 Commencer
             </button>
 
-            <button type="button" onClick={onShowCards}>
-                Voir les cartes
-            </button>
+            <div className="home-links">
+                <button type="button" onClick={onShowScores}>
+                    Scores
+                </button>
+                <button type="button" onClick={onShowCards}>
+                    Voir les cartes
+                </button>
+            </div>
 
             {confirming && (
                 <div className="overlay" onClick={() => setConfirming(false)}>

@@ -1,27 +1,23 @@
 import type { BoardGrid } from '../../game/cell';
+import type { Placement } from '../../game/history';
 import type { ScoreBreakdown } from '../../game/scoring';
+import type { Face } from '../../game/state';
 import { HexBoard } from '../HexBoard/HexBoard';
+import { ordinal, turnsLabel } from '../History/format';
+import { ScoreTable } from './ScoreTable';
 
 interface ScoreScreenProps {
-    grid:      BoardGrid;
-    score:     ScoreBreakdown;
-    turns:     number;
+    grid:        BoardGrid;
+    score:       ScoreBreakdown;
+    turns:       number;
+    face:        Face;
     spiritName?: string; // spirit taken this game, if any
-    onReplay:  () => void;
-    onHome:    () => void;
+    placement:   Placement | null; // null outside the leaderboard of the face
+    onReplay:    () => void;
+    onHome:      () => void;
 }
 
-const CATEGORIES: { key: keyof Omit<ScoreBreakdown, 'total'>; label: string }[] = [
-    { key: 'trees',     label: 'Arbres' },
-    { key: 'mountains', label: 'Montagnes' },
-    { key: 'fields',    label: 'Champs' },
-    { key: 'buildings', label: 'Bâtiments' },
-    { key: 'river',     label: 'Rivière' },
-    { key: 'animals',   label: 'Animaux' },
-    { key: 'spirit',    label: 'Esprit' },
-];
-
-export function ScoreScreen({ grid, score, turns, spiritName, onReplay, onHome }: ScoreScreenProps) {
+export function ScoreScreen({ grid, score, turns, face, spiritName, placement, onReplay, onHome }: ScoreScreenProps) {
     return (
         <div className="game score-screen">
             <div className="area-board">
@@ -29,21 +25,15 @@ export function ScoreScreen({ grid, score, turns, spiritName, onReplay, onHome }
             </div>
             <div className="area-side score-panel">
                 <h2>Partie terminée</h2>
-                <p className="score-turns">{turns} tours</p>
-                <table className="score-table">
-                    <tbody>
-                        {CATEGORIES.map(({ key, label }) => (
-                            <tr key={key}>
-                                <td>{key === 'spirit' && spiritName ? `${label} (${spiritName})` : label}</td>
-                                <td>{score[key]}</td>
-                            </tr>
-                        ))}
-                        <tr className="score-total">
-                            <td>Total</td>
-                            <td>{score.total}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                {placement && (
+                    <p className={`score-placement${placement.isRecord ? ' record' : ''}`}>
+                        {placement.isRecord
+                            ? `Nouveau record en face ${face} !`
+                            : `${ordinal(placement.rank)} du classement de la face ${face}`}
+                    </p>
+                )}
+                <p className="score-turns">{turnsLabel(turns)}</p>
+                <ScoreTable score={score} spiritName={spiritName} />
                 <div className="score-actions">
                     <button type="button" onClick={onHome}>Accueil</button>
                     <button type="button" className="primary" onClick={onReplay}>Rejouer</button>

@@ -248,6 +248,11 @@ button:disabled {
 }
 .score-panel h2 { margin: 0; font-size: 20px; }
 .score-turns { margin: 0; opacity: 0.7; font-size: 13px; }
+.score-placement { margin: 0; font-weight: 600; font-size: 15px; }
+.score-placement.record { color: #d0ef79; }
+@media (prefers-color-scheme: light) {
+    .score-placement.record { color: #5d8a4e; }
+}
 .score-table { border-collapse: collapse; font-size: 14px; min-width: 180px; }
 .score-table td { padding: 2px 8px; }
 .score-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
@@ -312,6 +317,7 @@ button:disabled {
 .face-label { font-weight: 700; font-size: 1.1em; }
 .face-detail { font-size: 12px; opacity: 0.75; }
 .home-start { font-size: 1.15em; padding: 0.8em; }
+.home-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .home-resume {
     display: flex;
     flex-direction: column;
@@ -368,3 +374,72 @@ button:disabled {
     justify-content: center;
     gap: 14px 10px;
 }
+
+/* ─── Scores (leaderboard and history) ────────────────────────────────────── */
+
+.history-screen {
+    box-sizing: border-box;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 0 12px 24px;
+}
+.history-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0 8px;
+    background: var(--history-header-bg, #242424);
+}
+@media (prefers-color-scheme: light) {
+    .history-header { --history-header-bg: #ffffff; }
+}
+.history-title { display: flex; align-items: center; gap: 12px; }
+.history-title h1 { margin: 0; font-size: 1.5em; }
+.history-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.history-tabs button { border: 2px solid transparent; }
+.history-tabs button.selected { border-color: #5d8a4e; font-weight: 700; }
+.history-faces .face-button { padding: 0.4em; }
+.history-empty { margin: 16px 0; text-align: center; opacity: 0.7; font-size: 14px; }
+.history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.history-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.6em 0.9em;
+    text-align: left;
+}
+.history-rank { width: 1.6em; font-weight: 700; text-align: center; }
+.history-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.history-meta { font-size: 13px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-total { font-size: 1.3em; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Detail of a past game: the side panel scrolls when the cards do not fit */
+.game-detail .area-side {
+    min-height: 0;
+    max-height: 50dvh;
+    overflow-y: auto;
+}
+@media (orientation: landscape) {
+    .game-detail .area-side { max-height: none; }
+}
+.detail-header { display: flex; align-items: center; gap: 12px; }
+.detail-header h2 { margin: 0; font-size: 20px; }
+.detail-cards { width: 100%; max-width: 260px; font-size: 14px; }
+.detail-cards h3 { margin: 8px 0 4px; font-size: 14px; }
+.detail-cards ul { list-style: none; margin: 0; padding: 0; }
+.detail-cards li { display: flex; gap: 8px; padding: 2px 0; }
+.detail-cards li > span:first-child { flex: 1; }
+.detail-cubes { opacity: 0.7; font-variant-numeric: tabular-nums; }
+.detail-points { width: 3.5em; text-align: right; font-variant-numeric: tabular-nums; }
+.detail-cards .history-empty { margin: 0; text-align: left; }

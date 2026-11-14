@@ -40,6 +40,7 @@ export interface TurnData {
 }
 
 export interface GameState extends TurnData {
+    id:          string;        // identifies the game, so it is recorded only once when it ends
     face:        Face;
     spiritOffer: string[];      // spirits offered before turn 1, emptied once chosen
     spirit:      string | null; // spirit taken (in hand or completed), null if none
@@ -47,7 +48,7 @@ export interface GameState extends TurnData {
 }
 
 export type GameAction =
-    | { type: 'NEW_GAME'; seed: number; face: Face }
+    | { type: 'NEW_GAME'; seed: number; face: Face; id?: string }
     | { type: 'CHOOSE_SPIRIT'; cardId: string | null }
     | { type: 'TAKE_GROUP'; index: number }
     | { type: 'PLACE_TOKEN'; tokenIndex: number; cellId: string }
@@ -170,7 +171,7 @@ export function scoreOf(state: GameState): ScoreBreakdown {
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
-export function newGame(seed: number, face: Face): GameState {
+export function newGame(seed: number, face: Face, id: string = seed.toString(36)): GameState {
     const rng = seededRng(seed);
     const bagTokens = (Object.entries(SOLO_CONFIG.bag) as [Token, number][])
         .flatMap(([token, count]) => Array<Token>(count).fill(token));
@@ -200,7 +201,7 @@ export function newGame(seed: number, face: Face): GameState {
         turn:              1,
         status:            'choosing-spirit',
     };
-    return { ...turnData, face, spiritOffer, spirit: null, turnStart: turnData };
+    return { ...turnData, id, face, spiritOffer, spirit: null, turnStart: turnData };
 }
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
@@ -208,7 +209,7 @@ export function newGame(seed: number, face: Face): GameState {
 // Invalid actions return the state unchanged
 export function gameReducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'NEW_GAME') {
-        return newGame(action.seed, action.face);
+        return newGame(action.seed, action.face, action.id);
     }
     if (action.type === 'CHOOSE_SPIRIT') {
         return chooseSpirit(state, action.cardId);
