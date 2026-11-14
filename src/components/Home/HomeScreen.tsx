@@ -4,6 +4,7 @@ import type { Face } from '../../game/state';
 interface HomeScreenProps {
     initialFace: Face;
     onStart:     (face: Face) => void;
+    onShowCards: () => void;
 }
 
 const FACES: { face: Face; label: string; detail: string }[] = [
@@ -13,7 +14,7 @@ const FACES: { face: Face; label: string; detail: string }[] = [
 
 // Entry point: set up the game, then start it.
 // Resume and history will be added here in the next steps.
-export function HomeScreen({ initialFace, onStart }: HomeScreenProps) {
+export function HomeScreen({ initialFace, onStart, onShowCards }: HomeScreenProps) {
     const [face, setFace] = useState<Face>(initialFace);
 
     return (
@@ -40,6 +41,10 @@ export function HomeScreen({ initialFace, onStart }: HomeScreenProps) {
 
             <button type="button" className="primary home-start" onClick={() => onStart(face)}>
                 Commencer
+            </button>
+
+            <button type="button" onClick={onShowCards}>
+                Voir les cartes
             </button>
         </main>
     );

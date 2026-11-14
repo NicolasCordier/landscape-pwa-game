@@ -307,3 +307,33 @@ button:disabled {
 .face-label { font-weight: 700; font-size: 1.1em; }
 .face-detail { font-size: 12px; opacity: 0.75; }
 .home-start { font-size: 1.15em; padding: 0.8em; }
+
+/* ─── Cards catalog ────────────────────────────────────────────────────────── */
+
+.cards-screen {
+    box-sizing: border-box;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 12px 12px 24px;
+}
+.cards-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    background: var(--cards-header-bg, #242424);
+}
+@media (prefers-color-scheme: light) {
+    .cards-header { --cards-header-bg: #ffffff; }
+}
+.cards-header h1 { margin: 0; font-size: 1.5em; }
+.cards-section h2 { margin: 16px 0 10px; font-size: 1.1em; }
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 80px);
+    justify-content: center;
+    gap: 14px 10px;
+}

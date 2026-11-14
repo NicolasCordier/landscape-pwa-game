@@ -1,6 +1,7 @@
 import { useReducer, useState } from 'react';
 import './App.css';
 import PWABadge from './PWABadge.tsx';
+import { CardsScreen } from './components/Cards/CardsScreen.tsx';
 import { GameScreen } from './components/Game/GameScreen.tsx';
 import { HomeScreen } from './components/Home/HomeScreen.tsx';
 import { loadSettings, saveSettings } from './game/settings.ts';
@@ -21,7 +22,7 @@ function appReducer(state: GameState | null, action: GameAction): GameState | nu
 
 function App() {
     const [face, setFace] = useState<Face>(() => loadSettings().face);
-    const [screen, setScreen] = useState<'home' | 'game'>('home');
+    const [screen, setScreen] = useState<'home' | 'game' | 'cards'>('home');
     const [state, dispatch] = useReducer(appReducer, null);
 
     function startGame(chosen: Face) {
@@ -40,8 +41,10 @@ function App() {
                     onReplay={() => startGame(state.face)}
                     onHome={() => setScreen('home')}
                 />
+            ) : screen === 'cards' ? (
+                <CardsScreen onBack={() => setScreen('home')} />
             ) : (
-                <HomeScreen initialFace={face} onStart={startGame} />
+                <HomeScreen initialFace={face} onStart={startGame} onShowCards={() => setScreen('cards')} />
             )}
             <PWABadge />
         </>
