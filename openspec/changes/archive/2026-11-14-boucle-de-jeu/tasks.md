@@ -45,7 +45,7 @@
 
 ## 7. Vérification d'ensemble
 
-- [ ] 7.1 Jouer une partie complète sur un téléphone Android (`npm run dev -- --host`, même Wi-Fi), en tournant l'écran pendant la partie ; noter les problèmes d'UX constatés pour les prochaines étapes
+- [x] 7.1 Jouer une partie complète sur un téléphone Android (`npm run dev -- --host`, même Wi-Fi), en tournant l'écran pendant la partie ; noter les problèmes d'UX constatés pour les prochaines étapes
 
 ## Workflow follow-up
 
