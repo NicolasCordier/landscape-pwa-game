@@ -169,6 +169,7 @@ export function GameScreen({ state, dispatch: act, onReplay, onHome }: GameScree
                     <div className="turn-status">
                         <span className="turn-number">Tour {state.turn}</span>
                         <span className="turn-instruction" role="status">{instruction}</span>
+                        <button type="button" className="turn-home" onClick={onHome}>Accueil</button>
                     </div>
                     {choosing ? (
                         <SpiritChoice

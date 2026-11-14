@@ -1,10 +1,11 @@
-import { useReducer, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import './App.css';
 import PWABadge from './PWABadge.tsx';
 import { CardsScreen } from './components/Cards/CardsScreen.tsx';
 import { GameScreen } from './components/Game/GameScreen.tsx';
 import { HomeScreen } from './components/Home/HomeScreen.tsx';
 import { loadSettings, saveSettings } from './game/settings.ts';
+import { clearCurrentGame, loadCurrentGame, saveCurrentGame } from './game/storage.ts';
 import { gameReducer, newGame } from './game/state.ts';
 import type { Face, GameAction, GameState } from './game/state.ts';
 
@@ -23,7 +24,23 @@ function appReducer(state: GameState | null, action: GameAction): GameState | nu
 function App() {
     const [face, setFace] = useState<Face>(() => loadSettings().face);
     const [screen, setScreen] = useState<'home' | 'game' | 'cards'>('home');
-    const [state, dispatch] = useReducer(appReducer, null);
+    // The saved game is loaded at launch, but only shown once the player resumes it
+    const [state, dispatch] = useReducer(appReducer, null, () => loadCurrentGame());
+
+    // Rejected actions return the same state, so this only runs when the game changes
+    useEffect(() => {
+        if (state === null) {
+            return;
+        }
+        if (state.status === 'over') {
+            clearCurrentGame();
+        } else {
+            saveCurrentGame(state);
+        }
+    }, [state]);
+
+    // The game in memory decides: resuming works even when storage is unavailable
+    const current = state && state.status !== 'over' ? state : null;
 
     function startGame(chosen: Face) {
         setFace(chosen);
@@ -44,7 +61,13 @@ function App() {
             ) : screen === 'cards' ? (
                 <CardsScreen onBack={() => setScreen('home')} />
             ) : (
-                <HomeScreen initialFace={face} onStart={startGame} onShowCards={() => setScreen('cards')} />
+                <HomeScreen
+                    initialFace={face}
+                    current={current && { face: current.face, turn: current.turn }}
+                    onStart={startGame}
+                    onResume={() => setScreen('game')}
+                    onShowCards={() => setScreen('cards')}
+                />
             )}
             <PWABadge />
         </>

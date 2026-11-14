@@ -225,6 +225,11 @@ button:disabled {
     font-size: 14px;
 }
 .turn-number { font-weight: 700; white-space: nowrap; }
+.turn-home {
+    flex-shrink: 0;
+    padding: 0.2em 0.7em;
+    font-size: 13px;
+}
 
 .turn-actions {
     display: flex;
@@ -307,6 +312,32 @@ button:disabled {
 .face-label { font-weight: 700; font-size: 1.1em; }
 .face-detail { font-size: 12px; opacity: 0.75; }
 .home-start { font-size: 1.15em; padding: 0.8em; }
+.home-resume {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 1.15em;
+    padding: 0.8em;
+}
+.home-resume-detail { font-size: 13px; font-weight: 400; opacity: 0.8; }
+
+.confirm-dialog {
+    box-sizing: border-box;
+    width: min(340px, calc(100vw - 32px));
+    padding: 20px 16px 16px;
+    border-radius: 12px;
+    background-color: #242424;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.confirm-dialog h2 { margin: 0; font-size: 1.15em; }
+.confirm-dialog p { margin: 0; font-size: 14px; }
+.confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+@media (prefers-color-scheme: light) {
+    .confirm-dialog { background-color: #ffffff; }
+}
 
 /* ─── Cards catalog ────────────────────────────────────────────────────────── */
 

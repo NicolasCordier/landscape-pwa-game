@@ -3,6 +3,7 @@ import type { BoardGrid } from './cell';
 import { generateBoardType } from './board';
 import { AnimalCard, SpiritCard, ALL_ANIMAL_CARDS, ALL_SPIRIT_CARDS } from './cards';
 import type { BaseCard } from './cards';
+import type { GameState } from './state';
 
 // ─── Serializable snapshot types ─────────────────────────────────────────────
 
@@ -16,29 +17,6 @@ interface SerializedCard {
 interface SerializedCell {
     stack: Token[];
     hasCube: boolean;
-}
-
-// Turn snapshot stored at the start of each turn for rollback
-// Mirrors SavedGame but without a nested snapshot (one level only)
-export interface TurnSnapshot {
-    board: SerializedCell[];
-    hand: SerializedCard[];
-    spiritCard: SerializedCard | null;
-    centralBoard: Token[][];
-    tokenBag: Token[];
-    turn: number;
-}
-
-export interface SavedGame {
-    version: number;
-    face: 'A' | 'B';
-    board: SerializedCell[];       // flat column-major order (same as generateBoard iteration)
-    hand: SerializedCard[];
-    spiritCard: SerializedCard | null;
-    centralBoard: Token[][];       // 3 groups of 3 tokens (solo central board)
-    tokenBag: Token[];
-    turn: number;
-    turnSnapshot: TurnSnapshot | null; // snapshot at turn start; null at game start
 }
 
 export interface GameRecord {
@@ -63,8 +41,6 @@ const STORAGE_KEYS = {
     currentGame: 'landscape_current_game',
     history:     'landscape_history',
 } as const;
-
-const CURRENT_VERSION = 1;
 
 // ─── Board serialization ──────────────────────────────────────────────────────
 
@@ -94,10 +70,6 @@ export function restoreBoard(grid: BoardGrid, saved: SerializedCell[]): void {
 }
 
 // ─── Card serialization ───────────────────────────────────────────────────────
-
-export function serializeCard(card: BaseCard): SerializedCard {
-    return { cardId: card.id, cubeIndex: card.cubeIndex };
-}
 
 // Looks up a card template from the registry and clones it with the saved cubeIndex
 export function deserializeCard(saved: SerializedCard): BaseCard | null {
@@ -133,107 +105,117 @@ export function deserializeCard(saved: SerializedCard): BaseCard | null {
     return clone;
 }
 
-// ─── Snapshot helpers ─────────────────────────────────────────────────────────
+// ─── Current game ─────────────────────────────────────────────────────────────
 
-export function createTurnSnapshot(game: SavedGame): TurnSnapshot {
-    return {
-        board:        game.board.map(c => ({ stack: [...c.stack], hasCube: c.hasCube })),
-        hand:         game.hand.map(c => ({ ...c })),
-        spiritCard:   game.spiritCard ? { ...game.spiritCard } : null,
-        centralBoard: game.centralBoard.map(group => [...group]),
-        tokenBag:     [...game.tokenBag],
-        turn:         game.turn,
-    };
-}
+// Bump whenever a GameState change makes older saves unusable: a field added
+// without a default, a field whose meaning changes, or renamed card ids.
+// Version 1 was an older format that was never written.
+export const SAVE_VERSION = 2;
 
-// Reverts a SavedGame to a previously captured snapshot
-export function applyTurnSnapshot(game: SavedGame, snapshot: TurnSnapshot): SavedGame {
-    return {
-        ...game,
-        board:        snapshot.board.map(c => ({ stack: [...c.stack], hasCube: c.hasCube })),
-        hand:         snapshot.hand.map(c => ({ ...c })),
-        spiritCard:   snapshot.spiritCard ? { ...snapshot.spiritCard } : null,
-        centralBoard: snapshot.centralBoard.map(group => [...group]),
-        tokenBag:     [...snapshot.tokenBag],
-        turn:         snapshot.turn,
-        turnSnapshot: null,
-    };
-}
+type KeyValueStore = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
-// ─── Game deserialization ─────────────────────────────────────────────────────
-
-export interface DeserializedGame {
-    grid: BoardGrid;
-    hand: BaseCard[];
-    spiritCard: SpiritCard | null;
-    centralBoard: Token[][];
-    tokenBag: Token[];
-    turn: number;
-    face: 'A' | 'B';
-}
-
-export function deserializeGame(saved: SavedGame): DeserializedGame {
-    const grid = generateBoardType(saved.face);
-    restoreBoard(grid, saved.board);
-
-    const hand = saved.hand
-        .map(deserializeCard)
-        .filter((c): c is BaseCard => c !== null);
-
-    const spiritCardRaw = saved.spiritCard ? deserializeCard(saved.spiritCard) : null;
-    const spiritCard = spiritCardRaw instanceof SpiritCard ? spiritCardRaw : null;
-
-    return {
-        grid,
-        hand,
-        spiritCard,
-        centralBoard: saved.centralBoard.map(group => [...group]),
-        tokenBag:     [...saved.tokenBag],
-        turn:         saved.turn,
-        face:         saved.face,
-    };
-}
-
-// ─── localStorage helpers ─────────────────────────────────────────────────────
-
-export function buildInitialSavedGame(face: 'A' | 'B', tokenBag: Token[]): SavedGame {
-    const grid = generateBoardType(face);
-    return {
-        version:      CURRENT_VERSION,
-        face,
-        board:        serializeBoard(grid),
-        hand:         [],
-        spiritCard:   null,
-        centralBoard: [],
-        tokenBag:     [...tokenBag],
-        turn:         1,
-        turnSnapshot: null,
-    };
-}
-
-export function saveCurrentGame(game: SavedGame): void {
-    localStorage.setItem(STORAGE_KEYS.currentGame, JSON.stringify(game));
-}
-
-export function loadCurrentGame(): SavedGame | null {
-    const raw = localStorage.getItem(STORAGE_KEYS.currentGame);
-    if (raw === null) {
-        return null;
-    }
+function defaultStore(): KeyValueStore | undefined {
     try {
-        const parsed = JSON.parse(raw) as SavedGame;
-        if (parsed.version !== CURRENT_VERSION) {
-            return null; // incompatible save version — discard
+        return globalThis.localStorage;
+    } catch {
+        return undefined; // storage blocked (private mode, disabled site data)
+    }
+}
+
+const KNOWN_CARD_IDS = new Set([...ALL_ANIMAL_CARDS, ...ALL_SPIRIT_CARDS].map(c => c.id));
+const TOKENS = new Set<unknown>(['GREEN', 'GRAY', 'BROWN', 'YELLOW', 'BLUE', 'RED'] satisfies Token[]);
+
+function isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isArrayOf<T>(value: unknown, check: (item: unknown) => item is T): value is T[] {
+    return Array.isArray(value) && value.every(check);
+}
+
+const isToken = (v: unknown): v is Token => TOKENS.has(v);
+const isCardId = (v: unknown): v is string => typeof v === 'string' && KNOWN_CARD_IDS.has(v);
+const isTokenGroup = (v: unknown): v is Token[] | null => v === null || isArrayOf(v, isToken);
+const isOfferSlot = (v: unknown): v is string | null => v === null || isCardId(v);
+const isCardState = (v: unknown): v is SerializedCard =>
+    isObject(v) && isCardId(v.cardId) && typeof v.cubeIndex === 'number';
+const isCell = (v: unknown): v is SerializedCell =>
+    isObject(v) && isArrayOf(v.stack, isToken) && typeof v.hasCube === 'boolean';
+
+// Structural check of the data a turn can change
+function isTurnData(value: unknown, cellCount: number): boolean {
+    return isObject(value)
+        && isArrayOf(value.board, isCell) && value.board.length === cellCount
+        && isArrayOf(value.tokenOffer, isTokenGroup)
+        && isArrayOf(value.tokenBag, isToken)
+        && isArrayOf(value.tokensToPlace, isToken)
+        && isArrayOf(value.cardDeck, isCardId)
+        && isArrayOf(value.cardOffer, isOfferSlot)
+        && isArrayOf(value.hand, isCardState)
+        && isArrayOf(value.completed, isCardState)
+        && typeof value.cardActionThisTurn === 'boolean'
+        && typeof value.turn === 'number'
+        && (value.status === 'choosing-spirit' || value.status === 'playing');
+}
+
+// Returns the saved game, or null if it is unreadable, from another version, or finished.
+// Structural only: the game rules are not replayed.
+export function parseSavedGame(raw: string): GameState | null {
+    try {
+        const parsed: unknown = JSON.parse(raw);
+        if (!isObject(parsed) || parsed.version !== SAVE_VERSION || !isObject(parsed.state)) {
+            return null;
         }
-        return parsed;
+        const state = parsed.state;
+        if (state.face !== 'A' && state.face !== 'B') {
+            return null;
+        }
+        const cellCount = generateBoardType(state.face).flat().length;
+        const valid = isTurnData(state, cellCount)
+            && isTurnData(state.turnStart, cellCount)
+            && isArrayOf(state.spiritOffer, isCardId)
+            && (state.spirit === null || isCardId(state.spirit));
+        return valid ? state as unknown as GameState : null;
     } catch {
         return null;
     }
 }
 
-export function clearCurrentGame(): void {
-    localStorage.removeItem(STORAGE_KEYS.currentGame);
+// Never throws: a full or blocked storage just leaves the game unsaved
+export function saveCurrentGame(state: GameState, store: KeyValueStore | undefined = defaultStore()): void {
+    try {
+        store?.setItem(STORAGE_KEYS.currentGame, JSON.stringify({ version: SAVE_VERSION, state }));
+    } catch {
+        // Not saved: the game goes on, but will not survive closing the app
+    }
 }
+
+// Never throws. A save that cannot be resumed is removed so it is not checked again.
+export function loadCurrentGame(store: KeyValueStore | undefined = defaultStore()): GameState | null {
+    try {
+        const raw = store?.getItem(STORAGE_KEYS.currentGame);
+        if (raw === null || raw === undefined) {
+            return null;
+        }
+        const state = parseSavedGame(raw);
+        if (state === null) {
+            store?.removeItem(STORAGE_KEYS.currentGame);
+        }
+        return state;
+    } catch {
+        return null;
+    }
+}
+
+export function clearCurrentGame(store: KeyValueStore | undefined = defaultStore()): void {
+    try {
+        store?.removeItem(STORAGE_KEYS.currentGame);
+    } catch {
+        // Nothing else to do: a save that cannot be removed cannot be read either
+    }
+}
+
+// ─── History ──────────────────────────────────────────────────────────────────
 
 export function saveGameRecord(record: GameRecord): void {
     const history = loadHistory();
